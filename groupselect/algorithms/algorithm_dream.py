@@ -692,8 +692,7 @@ def evaluate_demographics(temp_allocations,
 
 def evaluate_actions(ideal_dist,
                      table_dist,
-                     cat_labels,
-                     table_size):
+                     cat_labels):
     table_discrepancies = [y - x for y, x in zip(table_dist, ideal_dist)]
     actions = {}
 
