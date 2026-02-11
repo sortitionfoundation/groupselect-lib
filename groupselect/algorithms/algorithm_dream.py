@@ -19,6 +19,7 @@ def algorithm_dream(participants: np.ndarray[int],
                     n_attempts: int = 3,
                     seed: None | int = None):
 
+    print("dream")
     nallocations = len(groups)
     progress_bar = progress_func
     tables = groups[0][0]
@@ -27,7 +28,8 @@ def algorithm_dream(participants: np.ndarray[int],
         seats = value
 
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
+
 
     if len(order_cluster ) >=1:
         val_cluster = 'cluster'
@@ -38,10 +40,20 @@ def algorithm_dream(participants: np.ndarray[int],
     X = np.unique(X)
 
     Y = participants[:, order_diverse]
-    Y = np.unique(Y)
+
+    lister = [None] * len(order_diverse)
+
+    for i in range(0, len(order_diverse)):
+
+       lister[i] =[int(item[i]) for item in Y]
+
+       lister[i] = np.unique(lister[i])
+       lister[i] = lister[i].tolist()
+
 
     order_cluster_dict = dict(zip(order_cluster, [list(X)]))
-    order_diverse_dict = dict(zip(order_diverse, [list(Y)]))
+    order_diverse_dict = dict(zip(order_diverse, lister))
+
 
     swap_rounds = 1
 
@@ -267,13 +279,17 @@ def calculate_ideal_balance(cats_diverse,
                             m_data,
                             people):
     ideal_balance = {}
+
+    i = 0
     for demog in cats_diverse:
+        i += 1
         counts = [0] * len(cats_diverse[demog])
         for row in people:
             for i, category in enumerate(cats_diverse[demog]):
                 if row[demog] == category:
                     counts[i] += 1
         ideal_balance[demog] = [count / m_data for count in counts]
+
     return ideal_balance
 
 
@@ -317,6 +333,7 @@ def run_round(template,
     shuffled_pids = [x for x in shuffled_pids if x not in manual_pids]
 
     cluster_table_index = list(range(n_cluster_tables))
+
 
     if len(cats_cluster) == 1:
         cluster_individuals = []
@@ -411,6 +428,7 @@ def pareto_swaps(shuffled_pids,
                  random):
     temp_allocations_update = temp_allocations.copy()
 
+
     table_meeting_evaluations = {}
     table_demog_evaluations = {}
     for index, table in enumerate(temp_allocations_update):
@@ -447,6 +465,7 @@ def pareto_swaps(shuffled_pids,
                 pareto_profile = table_demog_evaluations[candidate_table][1]
                 table_valid = True
                 for index, demog in enumerate(pareto_profile):
+
                     if pid_info[demog] in pareto_profile[demog][profile[index]]:
                         pareto_score += 1
                     elif pid_info[demog] != profile[index]:
@@ -621,6 +640,7 @@ def generate_combinations(demogs,
 
 def evaluate_meetings(table,
                       previous_meetings):
+
     total_meetings = {}
     for i in range(len(table)):
         for j in range(i + 1, len(table)):
@@ -631,6 +651,7 @@ def evaluate_meetings(table,
                 agent1, 0) + previous_meetings.get((agent1, agent2), 0)
             total_meetings[agent2] = total_meetings.get(
                 agent2, 0) + previous_meetings.get((agent1, agent2), 0)
+
     return (total_meetings)
 
 
@@ -639,7 +660,10 @@ def evaluate_demographics(temp_allocations,
                           people,
                           cats_diverse,
                           m_data):
+
+
     table = temp_allocations[table_no]
+
 
     table_data = {}
     for index in table:
@@ -664,6 +688,7 @@ def evaluate_demographics(temp_allocations,
 
         table_actions[demog] = evaluate_actions(ideal_balance[demog], table_balance[demog], cats_diverse[demog],
                                                 len(table))
+
     return table_distances, table_actions
 
 
