@@ -28,7 +28,7 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
 
 
-
+    print("he")
 
     pareto_prob = [0] * 5
     pareto_prob[0] = prob1/20
@@ -40,7 +40,7 @@ def algorithm_heuristic(participants: np.ndarray[int],
     pareto_prob[3] = prob4/20
 
     pareto_prob[4] = prob5/20
-
+    print("pareto_prob")
     pareto_probs = {}
     i = 0
     for k, v in fields.items():
@@ -62,7 +62,7 @@ def algorithm_heuristic(participants: np.ndarray[int],
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
     order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 ]#or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
 
-
+    print("2")
 
     if len(order_cluster ) >=1:
         val_cluster = 'cluster'
@@ -114,7 +114,7 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
     seats = math.ceil(m_data /tables)
     previous_meetings = {}
-
+    print("3")
     try:
         random = np.random.default_rng(seed)
     except:
@@ -157,8 +157,9 @@ def algorithm_heuristic(participants: np.ndarray[int],
     n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
 
     allocation_results = n_results
-
-    meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
+    #print(meet1)
+    #meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
+    #print(meetval)
     ''' allocations = []
     for result in n_results[0]:
         allocations.append(n_results[0][result])
