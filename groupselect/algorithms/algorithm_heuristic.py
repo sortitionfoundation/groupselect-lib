@@ -19,8 +19,34 @@ def algorithm_heuristic(participants: np.ndarray[int],
                     manuals: dict[int, int],
                     progress_func: None | Callable = None,
                     n_attempts: int = 3,
-                    seed: None | int = None):
+                    seed: None | int = None,
+                    prob1: float = -1,
+                    prob2: float = -1,
+                    prob3: float = -1,
+                    prob4: float = -1,
+                    prob5: float = -1,):
 
+
+
+
+
+    pareto_prob = [0] * 5
+    pareto_prob[0] = prob1/20
+
+    pareto_prob[1] = prob2/20
+
+    pareto_prob[2] = prob3/20
+
+    pareto_prob[3] = prob4/20
+
+    pareto_prob[4] = prob5/20
+
+    pareto_probs = {}
+    i = 0
+    for k, v in fields.items():
+        if v == FieldMode.Diversify_1:
+            pareto_probs[k] = pareto_prob[i]
+            i = i + 1
 
     nallocations = len(groups)
     progress_bar = progress_func
@@ -30,26 +56,11 @@ def algorithm_heuristic(participants: np.ndarray[int],
         seats = value
 
 
-    rank1 = False
-    rank2 = False
-    rank3 = False
+
+
+
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
-
-    for k in order_diverse:
-
-        if fields[k] == FieldMode.Diversify_1:
-            rank1 = True
-        elif fields[k] == FieldMode.Diversify_2:
-            rank2 = True
-        else:
-            rank3 = True
-    if rank1 == True:
-        pareto_prob = 0.5
-    elif rank2 == True:
-        pareto_prob = 0.275
-    elif rank3 == True:
-        pareto_prob = 0.2
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 ]#or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
 
 
 
@@ -92,8 +103,6 @@ def algorithm_heuristic(participants: np.ndarray[int],
     cluster_tables = 2
 
     m_data = participants.shape[0]
-
-
 
     '''
     cluster_tables: int,
@@ -144,9 +153,12 @@ def algorithm_heuristic(participants: np.ndarray[int],
     if n_swap_loops < 1:
         raise Exception("Error: at least one round of meeting optimization must be specified (in *advanced settings*)")
 
-    n_results, meet0, meet1, meet2, meet3= allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_prob, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
+
+    n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
 
     allocation_results = n_results
+
+    meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
     ''' allocations = []
     for result in n_results[0]:
         allocations.append(n_results[0][result])
@@ -194,49 +206,61 @@ def algorithm_heuristic(participants: np.ndarray[int],
      #   distance[i] = evaluate_demographics(i, peopledata_vals_used, order_diverse_dict, m_data, fields)
 
     #distances = evaluate_demographics()
-    #print(distances, "distances")
+    #print(distances, "di
 
-
-    print(allocation_results[0][0])
     final = [0] * nallocations
     div_mean = [0] * nallocations
     minimum = [0] * nallocations
     maximum = [0] * nallocations
     final_results2 = max(allocation_results)
+    '''
     for j in range(nallocations):
+
         for i in range (0, tables):
-            distance[i] = evaluate_demographics(allocation_results[0][j], i, peopledata_vals_used, order_diverse_dict, m_data, fields)
+            distance[i] = evaluate_demographics(allocation_results[0][j], i, peopledata_vals_used, order_diverse_dict, m_data, fields, pareto_probs)
+
         this = [y for x,y in distance.items()]
         this2 = [x for x,y in this]
         this3 = [x[8] for x in this2]
+        #this4 = [x[7] for x in this2]
+        #this5 = [x[6] for x in this2]
+       # print("mu")
         #for i in range (0, len(distance)):
         #if (j == 983):
             #print(this3, "this3")
+      #  print("phi")
+        #final3 = statistics.mean(this3)
+        #final4 = statistics.mean(this4)
+        #final5 = statistics.mean(this5)
+        #final[j] = statistics.mean([final3, final4, final5])
         final[j] = statistics.mean(this3)
-        maximum[j] = max(this3)
-        minimum[j] = min(this3)
+        #maximum[j] = max(this3)
+        #minimum[j] = min(this3)
         #print(final[0:j+1])
+       # print("omega")
         div_mean[j] = statistics.mean(final[0:j+1])
 
         #print(final[j])
         #print(maximum[j])
         #print(minimum[j])
     #meet_mean = statistics.mean(prev_meet_mean)
-    if pareto_prob == 0.275:
-        rank = 2
-    elif pareto_prob == 0.5:
-        rank = 1
-    else:
-        rank = 3
+    #print("delta")
+    #if pareto_prob == 0.275:
+    #    rank = 2
+    #elif pareto_prob == 0.5:
+    #    rank = 1
+    #else:
+     #   rank = 3
 
-    filename = ('meetsvsdiv(alloc =' + nallocations.__str__() + ', rank =' + rank.__str__() + ') urb.csv')
+    #filename = ('mutli cats, rank =' + rank.__str__() + ')' + name + '.csv')
+    filename = (name + ".csv")
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["round div_mean","total_div_mean", "meet0", "meet1", "meet2", "meet3"])
-        for j in range(nallocations):
-            #writer.writerow([1,2,3,4])
-            writer.writerow([final[j], div_mean[j], meet0[j], meet1[j], meet2[j], meet3[j]])
-
+        for j in range(0, 10):
+           # writer.writerow([1,2,3,4])
+            writer.writerow([final[j], div_mean[j], meet0[j], meet1[j], meet2[j], meet3[j], meetval])
+'''
     return AllocatorResult(final_results2)
 
 def allocate(tables,
@@ -246,7 +270,7 @@ def allocate(tables,
              m_data,
              nallocations,
              cluster_tables,
-             pareto_prob,
+             pareto_probs,
              n_swap_loops,
              progress_bar,
              previous_meetings,
@@ -323,7 +347,7 @@ def allocate(tables,
         '''round_assign_pre, round_assign_swap, meetings_pre, '''
         allocation = run_round(template, n_swap_loops, seats, m_data, manuals, n_cluster_tables, order_cluster_dict,
                                order_diverse_dict, peopledata_vals_used, val_cluster, no_tables, previous_meetings,
-                               pareto_prob, random, fields)
+                               pareto_probs, random, fields)
 
         allocation = Allocation(
             ParticipantGroup(p_id for p_id in group)
@@ -395,10 +419,8 @@ def allocate(tables,
         meet1[round_no] = sum(x == 1 for x in previous_meetings.values())
         meet2[round_no] = sum(x == 2 for x in previous_meetings.values())
         meet3[round_no] = sum(x == 3 for x in previous_meetings.values())
-
-
-        #meet4[round_no] = sum(x == 4 for x in previous_meetings.values())
-        #meet5[round_no] = sum(x == 5 for x in previous_meetings.values())
+        meet4[round_no] = sum(x == 4 for x in previous_meetings.values())
+        meet5[round_no] = sum(x == 5 for x in previous_meetings.values())
         #meet6[round_no] = sum(x == 6 for x in previous_meetings.values())
         #meet7[round_no] = sum(x == 7 for x in previous_meetings.values())
         #meet8[round_no] = sum(x == 8 for x in previous_meetings.values())
@@ -425,7 +447,7 @@ def allocate(tables,
    #     writer.writerow(['round_no', 'meet0', 'meet1', 'meet2', 'meet3', 'meet4', 'meet5', 'meet6', 'meet7', 'meet8', 'meet9', 'meet10'])
    #     for i in range(n_rounds):
    #         writer.writerow([i, meet0[i], meet1[i], meet2[i], meet3[i], meet4[i], meet5[i], meet6[i], meet7[i], meet8[i], meet9[i], meet10[i]])
-    return allocation_attempts, meet0, meet1, meet2, meet3
+    return allocation_attempts, meet0, meet1, meet2, meet3, meet4, meet5
 
 
 def calculate_ideal_balance(cats_diverse,
@@ -471,7 +493,7 @@ def run_round(template,
               val_cluster,
               no_tables,
               previous_meetings,
-              pareto_prob,
+              pareto_probs,
               random,
               fields) -> Allocation:
     allocations = copy.deepcopy(template)
@@ -527,14 +549,14 @@ def run_round(template,
 
     if n_swap_loops == 1:
         pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_prob, random, fields)
+                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
     else:
         pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_prob, random, fields)
+                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
         for swap_round in range(1, n_swap_loops):
             pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index,
                                               pareto_allocations, people, cats_diverse, manual_pids, previous_meetings,
-                                              m_data, pareto_prob, random, fields)
+                                              m_data, pareto_probs, random, fields)
 
     raw_meetings = previous_meetings.copy()
 
@@ -575,7 +597,7 @@ def pareto_swaps(shuffled_pids,
                  manual_pids,
                  previous_meetings,
                  m_data,
-                 pareto_prob,
+                 pareto_probs,
                  random,
                  fields):
     temp_allocations_update = temp_allocations.copy()
@@ -587,7 +609,8 @@ def pareto_swaps(shuffled_pids,
         table_demog_evaluations[index] = {}
 
         table_demog_evaluations[index] = evaluate_demographics(
-            temp_allocations_update, index, people, cats_diverse, m_data, fields)
+            temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
+
 
     for pid in shuffled_pids:
 
@@ -605,9 +628,13 @@ def pareto_swaps(shuffled_pids,
 
         candidate_profiles = generate_combinations(candidate_demogs, pid_info)
         candidate_swaps = {}
-        important_scores = {}
 
-        print(candidate_profiles)
+        for k, v in cats_diverse.items():
+            demog_total = k
+
+        demog_scores = [[False] * (demog_total)] * m_data
+
+
         for profile in candidate_profiles:
             if pid in cluster_individuals:
                 candidate_swap_tables = [x for x in table_demog_evaluations if (
@@ -616,29 +643,30 @@ def pareto_swaps(shuffled_pids,
                 candidate_swap_tables = [
                     x for x in table_demog_evaluations if x != table_no]
             for candidate_table in candidate_swap_tables:
+                demog_pareto = [False] * (demog_total)
                 pareto_score = 0
                 pareto_profile = table_demog_evaluations[candidate_table][1]
-
                 table_valid = True
                 for index, demog in enumerate(pareto_profile):
-                    diverse_one = False
-                    diverse_two = False
-                    diverse_three = False
+
                     if pid_info[demog] in pareto_profile[demog][profile[index]]:
 
                         #print(fields[list(cats_diverse.keys())[list(cats_diverse.values()).index()]])
                         #diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cats_labels)]]
                         diversity_val = fields[demog]
-                        if diversity_val == FieldMode.Diversify_3:
-                            pareto_score += 0.25
-                        elif diversity_val == FieldMode.Diversify_2:
-                            pareto_score += 0.5
-                        else:
-                            pareto_score += 1
+                        #if diversity_val == FieldMode.Diversify_3:
+                         #   pareto_score += 1
+                          #  rank3_score += 1
+                       # elif diversity_val == FieldMode.Diversify_2:
+                        #    pareto_score += 1
+                         #   rank2_score += 1
+                        #else:
+                        pareto_score += 1
+                        demog_pareto[demog-1] = True
+
                     elif pid_info[demog] != profile[index]:
                         table_valid = False
                         break
-
                 if table_valid:
                     if pid in cluster_individuals:
                         for swap_pid in temp_allocations_update[candidate_table]:
@@ -647,7 +675,11 @@ def pareto_swaps(shuffled_pids,
                                          key in cats_diverse) == profile:
                                     candidate_swaps[swap_pid] = pareto_score + \
                                                                 candidate_profiles[profile]
-                                    important_scores[swap_pid] = pareto_score
+
+                                    for i in range(0, demog_total):
+                                        if demog_pareto[i - 1] == True:
+                                            demog_scores[swap_pid][i - 1] = True
+
                     else:
                         for swap_pid in temp_allocations_update[candidate_table]:
                             if swap_pid not in cluster_individuals:
@@ -660,15 +692,17 @@ def pareto_swaps(shuffled_pids,
                                         candidate_swaps[swap_pid] = pareto_score + \
                                                                     candidate_profiles[profile]
 
-                                        important_scores[swap_pid] = pareto_score
+                                        for i in range(0, demog_total):
+                                            if demog_pareto[i-1] == True:
+                                                demog_scores[swap_pid][i-1] = True
+
 
         if len(candidate_swaps) == 0:
             continue
-
         candidate_meetings = {}
         for swap in candidate_swaps:
             candidate_meetings[swap] = evaluate_swap(pid, swap, temp_allocations_update, table_meeting_evaluations,
-                                                     previous_meetings)
+                                                      previous_meetings)
 
         candidate_swaps = {key: value for key, value in candidate_swaps.items() if (
                 candidate_swaps[key] > 0) or (candidate_swaps[key] == 0 and candidate_meetings[key] > 0)}
@@ -688,13 +722,11 @@ def pareto_swaps(shuffled_pids,
             ) if (value == distinct_value) and (candidate_meetings[key] == max_meetings)})
         distinct_meetings = {key: value for key, value in candidate_meetings.items(
         ) if key in distinct_candidates}
-
         reverse_mapping = {}
         for key, value in distinct_candidates.items():
             if value not in reverse_mapping:
                 reverse_mapping[value] = []
             reverse_mapping[value].append(key)
-
         final_candidates = {}
         for value, keys in reverse_mapping.items():
             final_candidates[random.choice(keys)] = value
@@ -702,7 +734,6 @@ def pareto_swaps(shuffled_pids,
             key: value for key, value in distinct_meetings.items() if key in final_candidates}
 
         keys_to_remove = set()
-
         for key in final_meetings.keys():
             if any(final_meetings[other_key] >= final_meetings[key] and final_candidates[other_key] > final_candidates[
                 key] for other_key in final_meetings.keys() if other_key != key):
@@ -710,7 +741,7 @@ def pareto_swaps(shuffled_pids,
         for key in keys_to_remove:
             del final_meetings[key]
             del final_candidates[key]
-        final_swap = select_key(final_candidates, final_meetings, pareto_prob, random, important_scores)
+        final_swap = select_key(final_candidates, final_meetings, pareto_probs, random, demog_scores, demog_total)
         if final_swap == None:
             continue
 
@@ -727,9 +758,8 @@ def pareto_swaps(shuffled_pids,
             table_meeting_evaluations[index] = evaluate_meetings(
                 temp_allocations_update[index], previous_meetings)
             table_demog_evaluations[index] = {}
-
             table_demog_evaluations[index] = evaluate_demographics(
-                temp_allocations_update, index, people, cats_diverse, m_data, fields)
+                temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
 
 
     return temp_allocations_update
@@ -737,19 +767,25 @@ def pareto_swaps(shuffled_pids,
 
 def select_key(pareto,
                meet,
-               pareto_prob,
+               pareto_probs,
                random,
-               important_scores):
-    #areto_prob_copy = pareto_prob.copy()
-   # if important_scores[pareto] == 0.5:
-   #     pareto_prob_copy = 0.275
-   # elif important_scores[pareto] == 0.25:
-   #     pareto_prob_copy = 0.2
+               demog_scores,
+               demog_total):
+    relevant_demogs = []
+    k = list(pareto.keys())[0]
+    for i in range (0, demog_total):
+        if demog_scores[k][i] == True:
+
+            relevant_demogs.append(pareto_probs[i+1])
+    if relevant_demogs != []:
+       pareto_prob_copy = max(relevant_demogs)
+    else:
+        pareto_prob_copy = max(pareto_probs.values())
+
     pareto_copy = pareto.copy()
     meet_copy = meet.copy()
     total_a = sum(pareto_copy.values())
-
-    if random.random() < pareto_prob:
+    if random.random() < pareto_prob_copy:
         if len(pareto_copy) == 1:
             return next(iter(pareto_copy.keys()))
 
@@ -844,7 +880,8 @@ def evaluate_demographics(temp_allocations,
                           people,
                           cats_diverse,
                           m_data,
-                          fields):
+                          fields,
+                          pareto_probs):
     table = temp_allocations[table_no]
 
 
@@ -876,8 +913,7 @@ def evaluate_demographics(temp_allocations,
             ideal_balance[demog], table_balance[demog])]) / len(ideal_balance[demog])
 
         table_actions[demog] = evaluate_actions(ideal_balance[demog], table_balance[demog], cats_diverse[demog],
-                                                len(table), fields, cats_diverse)
-
+                                                len(table), fields, cats_diverse, pareto_probs)
 
 
     return table_distances, table_actions
@@ -888,7 +924,8 @@ def evaluate_actions(ideal_dist,
                      cat_labels,
                      table_size,
                      fields,
-                     cats_diverse):
+                     cats_diverse,
+                     pareto_probs):
     table_discrepancies = [y - x for y, x in zip(table_dist, ideal_dist)]
 
     actions = {}
@@ -896,17 +933,22 @@ def evaluate_actions(ideal_dist,
     #print(list(mydict.keys())[list(mydict.values()).index(16)])
     #mydict.keys()[mydict.values().index(16)]
     diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]]
+
+    lister = list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]
+
+    #top_prob = max(pareto_probs)
+    threshold = -0.5 + pareto_probs[lister]
     #k = fields[cats_diverse[cat_labels]]
     for index, label in enumerate(cat_labels):
         actions_for_label = []
         if table_dist[index] > ideal_dist[index]:
             for a, b in zip(table_discrepancies, cat_labels):
-                if diversity_val == FieldMode.Diversify_1 and a < 0:
+                if diversity_val == FieldMode.Diversify_1 and a < threshold:
                        actions_for_label.append(b)
-                elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
-                       actions_for_label.append(b)
-                elif diversity_val == FieldMode.Diversify_3 and a < -0.7:
-                       actions_for_label.append(b)
+                #elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
+                 #      actions_for_label.append(b)
+                #elif diversity_val == FieldMode.Diversify_3 and a < -0.7:
+                 #      actions_for_label.append(b)
         actions[label] = actions_for_label
 
 
