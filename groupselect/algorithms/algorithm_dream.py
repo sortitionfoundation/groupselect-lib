@@ -19,7 +19,6 @@ def algorithm_dream(participants: np.ndarray[int],
                     n_attempts: int = 3,
                     seed: None | int = None):
 
-
     nallocations = len(groups)
     progress_bar = progress_func
     tables = groups[0][0]
@@ -660,6 +659,8 @@ def evaluate_demographics(temp_allocations,
                           people,
                           cats_diverse,
                           m_data):
+
+
     table = temp_allocations[table_no]
 
 
@@ -692,7 +693,8 @@ def evaluate_demographics(temp_allocations,
 
 def evaluate_actions(ideal_dist,
                      table_dist,
-                     cat_labels):
+                     cat_labels,
+                     table_size):
     table_discrepancies = [y - x for y, x in zip(table_dist, ideal_dist)]
     actions = {}
 

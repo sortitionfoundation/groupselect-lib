@@ -1,3 +1,5 @@
+import csv
+import statistics
 from typing import Callable
 
 import numpy as np
@@ -14,6 +16,36 @@ def algorithm_legacy(participants: np.ndarray[int],
                      progress_func: None | Callable = None,
                      n_attempts: int = 100,
                      seed: None | int = None) -> AllocatorResult:
+
+    meet0 = [0] * 10
+    meet1 = [0] * 10
+    meet2 = [0] * 10
+    meet3 = [0] * 10
+    meet4 = [0] * 10
+    meet5 = [0] * 10
+    meet6 = [0] * 10
+    meet7 = [0] * 10
+
+
+    m_data = participants.shape[0]
+
+
+    peopledata_vals_used = [{} for i in range(m_data)]
+    order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
+
+    lister = [None] * len(order_diverse)
+    Y = participants[:, order_diverse]
+    for i in range(0, len(order_diverse)):
+        lister[i] = [int(item[i]) for item in Y]
+
+        lister[i] = np.unique(lister[i])
+        lister[i] = lister[i].tolist()
+    order_diverse_dict = dict(zip(order_diverse, lister))
+
+    for i in range(m_data):
+        for j in order_cluster + order_diverse:
+            peopledata_vals_used[i][j] = int(participants[i][j])
 
     # Check argument: seed
     if not (seed is None or isinstance(seed, int)):
@@ -32,7 +64,7 @@ def algorithm_legacy(participants: np.ndarray[int],
         raise Exception('Argument n_attempts must be positive integer.')
 
     # Check that there is at least one diversification field defined.
-    if not FieldMode.Diversify in fields.values():
+    if not FieldMode.Diversify_1 in fields.values():
         raise Exception('Error: One diversification field required!',
                         'You have to set at least one field that is '
                         'used to diversify people across groups.')
@@ -55,7 +87,9 @@ def algorithm_legacy(participants: np.ndarray[int],
     for n, ensemble in enumerate(allocation_attempts):
         if progress_func is not None:
             progress_func(n)
+        i = 0
         for n_gr, n_ppgr in groups:
+            i = i + 1
             # Shuffle participant IDs.
             shuffle = list(range(len(participants)))
             random.shuffle(shuffle)
@@ -75,6 +109,44 @@ def algorithm_legacy(participants: np.ndarray[int],
                 for group in allocation
             )
 
+            #distance = {}
+            #index = 0
+            #for table in allocation:
+             #   print(index)
+              #  distance[i] = evaluate_demographics(
+               #      allocation, index, peopledata_vals_used, order_diverse_dict, m_data)
+               # index += 1
+
+            #print(fields)
+            #print(allocation)
+            #print(participants)
+
+            #fields_diversify = [k for k, v in fields.items() if v == FieldMode.Diversify_1]
+
+            #groups_list = [
+             #   g_id
+              #  for g_id, group in enumerate(allocation)
+               # if len(group) <= n_ppgr
+            #]
+            field_val = [0,1]
+            #fielders = []
+            #for field_id in fields_diversify:
+             #   for val in field_val:
+              #      field_value_counts = {
+               #         g_id: _count_categories(allocation[g_id], field_id, val, participants)
+                #        for g_id in groups_list
+                 #   }
+                 #   field_val_counts_min = min(field_value_counts.items(), key=lambda x: x[1])[1]
+                    #groups_list = [
+                    #    g_id
+                    #    for g_id in groups_list
+                    #    if field_value_counts[g_id] == field_val_counts_min
+                    #]
+ #                   fielders.append(field_value_counts)
+
+
+            #print("here ", distance)
+
             # Append allocation to ensemble.
             ensemble.append(allocation)
 
@@ -93,6 +165,87 @@ def algorithm_legacy(participants: np.ndarray[int],
         key=lambda ensemble: ensemble.calc_n_meetings_alo(),
     )
 
+    previous_meetings = {}
+
+
+    for i in range(m_data):
+        for j in range( i +1, m_data):
+            pair = (i ,j)
+            if pair not in previous_meetings:
+                previous_meetings[pair] = 0
+
+    """
+    final = [0] * 10
+    div_mean = [0] * 10
+    distance = {}
+    print("6")
+    if order_cluster == []:
+        it = 8
+    else:
+        it = 7
+    for j in range(0, 10):
+      for i in range(0, 10):
+         distance[i] = evaluate_demographics(
+           allocation_sample_max[j], i, peopledata_vals_used, order_diverse_dict, m_data)
+
+
+         this = [y for x, y in distance.items()]
+         this3 = [x[it] for x in this]
+         # for i in range (0, len(distance)):
+         # if (j == 983):
+         # print(this3, "this3")
+         final[j] = statistics.mean(this3)
+         # print(final[0:j+1])
+         div_mean[j] = statistics.mean(final[0:j + 1])
+    print("7")
+    for n in range(0, 10):
+        for m in range (0, len(allocation_sample_max[n])):
+
+            for i in range (0, len(allocation_sample_max[n][m])):
+
+                 pid_1 = allocation_sample_max[n][m][i]
+                 for j in range (i+1, len(allocation_sample_max[n][m])):
+                     pid_2 = allocation_sample_max[n][m][j]
+                     pair = (min(pid_1,pid_2), max(pid_1,pid_2))
+                     previous_meetings[pair] += 1
+        meet0[n] = sum(x == 0 for x in previous_meetings.values())
+        meet1[n] = sum(x == 1 for x in previous_meetings.values())
+        meet2[n] = sum(x == 2 for x in previous_meetings.values())
+        meet3[n] = sum(x == 3 for x in previous_meetings.values())
+        meet4[n] = sum(x == 4 for x in previous_meetings.values())
+        meet5[n] = sum(x == 5 for x in previous_meetings.values())
+        meet6[n] = sum(x == 6 for x in previous_meetings.values())
+        meet7[n] = sum(x == 7 for x in previous_meetings.values())
+    print("8")
+    meetval = (meet1[9] + (meet2[9] / 2) + meet3[9] / 3 + meet4[9] / 4 + meet5[9] / 5 + meet6[9] / 6 + meet7[9]/7) / (
+                meet0[9] + meet1[9] + meet2[9] + meet3[9] + meet4[9] + meet5[9] + meet6[9] + meet7[9])
+
+    if len(groups) == 10:
+            name = "leggenraceage"
+    if len(groups) == 11:
+            name = "legurbdietedu"
+    if len(groups) == 12:
+            name = "legphotoaudioage"
+    if len(groups) == 13:
+            name = "legracedietphoto"
+    if len(groups)== 14:
+            name = "legageeduaudio"
+    if len(groups) == 15:
+            name = "leggendietage"
+    if len(groups) == 16:
+            name = "legraceeduaudio"
+    if len(groups) == 17:
+            name = "legageurbphoto"
+
+    filename = name + '.csv'
+    #filename = ('meetsvsdiv(alloc = photo.csv')
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["round div_mean", "total_div_mean", "meetval"])
+        for j in range(10):
+            # writer.writerow([1,2,3,4])
+            writer.writerow([final[j], div_mean[j], meetval])
+    """
     # Create AllocatorResult from sample max and return
     return AllocatorResult(ensemble=allocation_sample_max)
 
@@ -118,7 +271,7 @@ def _allocate_legacy_once(participants: np.ndarray[int],
     # Split fields into clustering and diversification fields. Order participant IDs
     # by clustering and diversification field values.
     fields_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    fields_diversify = [k for k, v in fields.items() if v == FieldMode.Diversify]
+    fields_diversify = [k for k, v in fields.items() if v == FieldMode.Diversify_1]
     p_ids_ordered = np.lexsort(participants[:, (fields_cluster + fields_diversify)[::-1]].T)
 
     # Loop over participants and allocate to a group.
@@ -227,3 +380,56 @@ def _count_categories(group: ParticipantGroup, field_id: int, field_val: int, pa
 
 def _number_of_people_filtered(participants: np.ndarray[int], fields: dict[int, int]):
     return (participants.T[list(fields.keys())] == list(fields.values())).all(axis=0).sum()
+
+def evaluate_demographics(temp_allocations,
+                          table_no,
+                          people,
+                          cats_diverse,
+                          m_data):
+    table = temp_allocations[table_no]
+
+
+    table_data = {}
+    for index in table:
+        table_data[index] = people[index]
+
+
+    ideal_balance = calculate_ideal_balance(cats_diverse, m_data, people)
+
+    table_balance = {}
+    table_actions = {}
+    table_distances = {}
+    table_length = len(table)
+
+    i = 0
+
+
+    for demog in cats_diverse:
+        counts = [0] * len(cats_diverse[demog])
+        for person in table_data.values():
+            for i, category in enumerate(cats_diverse[demog]):
+                if person.get(demog) == category:
+                    counts[i] += 1
+        table_balance[demog] = [count / table_length for count in counts]
+
+        table_distances[demog] = sum([abs(x - y) for x, y in zip(
+            ideal_balance[demog], table_balance[demog])]) / len(ideal_balance[demog])
+
+
+
+    return table_distances
+
+def calculate_ideal_balance(cats_diverse,
+                            m_data,
+                            people):
+
+    ideal_balance = {}
+    for demog in cats_diverse:
+        counts = [0] * len(cats_diverse[demog])
+        for row in people:
+            for i, category in enumerate(cats_diverse[demog]):
+                if row[demog] == category:
+                    counts[i] += 1
+        ideal_balance[demog] = [count / m_data for count in counts]
+
+    return ideal_balance

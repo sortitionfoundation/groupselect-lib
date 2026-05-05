@@ -21,6 +21,7 @@ def allocate_pandas(participants: pd.DataFrame,
                     settings: None | dict = None,
                     return_full: bool = False) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame, AllocatorResult]:
     # Check that the dataframe index is unique.
+    print("enough")
     if not participants.index.is_unique:
         raise Exception('Index of dataframe must be unique.')
 
