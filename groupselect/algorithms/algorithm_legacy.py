@@ -17,11 +17,17 @@ def algorithm_legacy(participants: np.ndarray[int],
                      n_attempts: int = 100,
                      seed: None | int = None) -> AllocatorResult:
 
-    print("hoho")
-
+    meet0 = [0] * 10
     meet1 = [0] * 10
-    m_data = participants.shape[0]
+    meet2 = [0] * 10
+    meet3 = [0] * 10
+    meet4 = [0] * 10
+    meet5 = [0] * 10
+    meet6 = [0] * 10
+    meet7 = [0] * 10
 
+
+    m_data = participants.shape[0]
 
 
     peopledata_vals_used = [{} for i in range(m_data)]
@@ -81,7 +87,9 @@ def algorithm_legacy(participants: np.ndarray[int],
     for n, ensemble in enumerate(allocation_attempts):
         if progress_func is not None:
             progress_func(n)
+        i = 0
         for n_gr, n_ppgr in groups:
+            i = i + 1
             # Shuffle participant IDs.
             shuffle = list(range(len(participants)))
             random.shuffle(shuffle)
@@ -143,6 +151,7 @@ def algorithm_legacy(participants: np.ndarray[int],
             ensemble.append(allocation)
 
     # Sample `n_allocation` allocations and repeat that `n_attempts` times.
+
     allocation_samples: list[AllocationEnsemble] = [
         AllocationEnsemble()
         for _ in range(n_attempts)
@@ -150,6 +159,7 @@ def algorithm_legacy(participants: np.ndarray[int],
     for a_id in range(len(groups)):
         for sample, choice in zip(allocation_samples, random.choice(n_attempts, n_attempts)):
             sample.append(allocation_attempts[choice][a_id])
+
 
     # Select the sample with maximum number of meetings.
     allocation_sample_max = max(
@@ -159,62 +169,85 @@ def algorithm_legacy(participants: np.ndarray[int],
 
     previous_meetings = {}
 
+
     for i in range(m_data):
         for j in range( i +1, m_data):
             pair = (i ,j)
             if pair not in previous_meetings:
                 previous_meetings[pair] = 0
 
-
+    """
     final = [0] * 10
     div_mean = [0] * 10
     distance = {}
-    print(allocation_sample_max[0])
+    print("6")
+    if order_cluster == []:
+        it = 8
+    else:
+        it = 7
     for j in range(0, 10):
-      print("j",j)
-      for i in range(0, 11):
-         print("i",i)
+      for i in range(0, 10):
          distance[i] = evaluate_demographics(
            allocation_sample_max[j], i, peopledata_vals_used, order_diverse_dict, m_data)
 
 
          this = [y for x, y in distance.items()]
-         this3 = [x[8] for x in this]
+         this3 = [x[it] for x in this]
          # for i in range (0, len(distance)):
          # if (j == 983):
          # print(this3, "this3")
          final[j] = statistics.mean(this3)
          # print(final[0:j+1])
          div_mean[j] = statistics.mean(final[0:j + 1])
-
+    print("7")
     for n in range(0, 10):
-        print("n",n)
         for m in range (0, len(allocation_sample_max[n])):
-            print("m",m)
+
             for i in range (0, len(allocation_sample_max[n][m])):
 
-                 print(allocation_sample_max[n][m])
                  pid_1 = allocation_sample_max[n][m][i]
                  for j in range (i+1, len(allocation_sample_max[n][m])):
-                     print(allocation_sample_max[n][m][j])
                      pid_2 = allocation_sample_max[n][m][j]
                      pair = (min(pid_1,pid_2), max(pid_1,pid_2))
                      previous_meetings[pair] += 1
+        meet0[n] = sum(x == 0 for x in previous_meetings.values())
         meet1[n] = sum(x == 1 for x in previous_meetings.values())
+        meet2[n] = sum(x == 2 for x in previous_meetings.values())
+        meet3[n] = sum(x == 3 for x in previous_meetings.values())
+        meet4[n] = sum(x == 4 for x in previous_meetings.values())
+        meet5[n] = sum(x == 5 for x in previous_meetings.values())
+        meet6[n] = sum(x == 6 for x in previous_meetings.values())
+        meet7[n] = sum(x == 7 for x in previous_meetings.values())
+    print("8")
+    meetval = (meet1[9] + (meet2[9] / 2) + meet3[9] / 3 + meet4[9] / 4 + meet5[9] / 5 + meet6[9] / 6 + meet7[9]/7) / (
+                meet0[9] + meet1[9] + meet2[9] + meet3[9] + meet4[9] + meet5[9] + meet6[9] + meet7[9])
 
-    print(previous_meetings)
-    print(div_mean)
-    print(allocation_sample_max)
-    print(meet1)
+    if len(groups) == 10:
+            name = "leggenraceage"
+    if len(groups) == 11:
+            name = "legurbdietedu"
+    if len(groups) == 12:
+            name = "legphotoaudioage"
+    if len(groups) == 13:
+            name = "legracedietphoto"
+    if len(groups)== 14:
+            name = "legageeduaudio"
+    if len(groups) == 15:
+            name = "leggendietage"
+    if len(groups) == 16:
+            name = "legraceeduaudio"
+    if len(groups) == 17:
+            name = "legageurbphoto"
 
-    filename = ('meetsvsdiv(alloc = photo.csv')
+    filename = name + '.csv'
+    #filename = ('meetsvsdiv(alloc = photo.csv')
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(["round div_mean", "total_div_mean", "meet1"])
+        writer.writerow(["round div_mean", "total_div_mean", "meetval"])
         for j in range(10):
             # writer.writerow([1,2,3,4])
-            writer.writerow([final[j], div_mean[j], meet1[j]])
-
+            writer.writerow([final[j], div_mean[j], meetval])
+    """
     # Create AllocatorResult from sample max and return
     return AllocatorResult(ensemble=allocation_sample_max)
 
@@ -357,9 +390,6 @@ def evaluate_demographics(temp_allocations,
                           m_data):
     table = temp_allocations[table_no]
 
-    print("far")
-
-    print(table)
 
     table_data = {}
     for index in table:
@@ -388,13 +418,13 @@ def evaluate_demographics(temp_allocations,
             ideal_balance[demog], table_balance[demog])]) / len(ideal_balance[demog])
 
 
-    print("epis")
+
     return table_distances
 
 def calculate_ideal_balance(cats_diverse,
                             m_data,
                             people):
-    print("prob")
+
     ideal_balance = {}
     for demog in cats_diverse:
         counts = [0] * len(cats_diverse[demog])
@@ -404,5 +434,4 @@ def calculate_ideal_balance(cats_diverse,
                     counts[i] += 1
         ideal_balance[demog] = [count / m_data for count in counts]
 
-    print("ideal_balance")
     return ideal_balance

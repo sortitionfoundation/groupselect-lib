@@ -24,13 +24,27 @@ def algorithm_heuristic(participants: np.ndarray[int],
                     prob2: float = -1,
                     prob3: float = -1,
                     prob4: float = -1,
-                    prob5: float = -1,):
+                    prob5: float = -1,
+                    prob6: float = -1,
+                    prob7: float = -1,
+                    prob8: float = -1,
+                    prob9: float = -1,
+                    prob10: float = -1,
+                    prob11: float = -1,
+                    prob12: float = -1,
+                    prob13: float = -1,
+                    prob14: float = -1,
+                    prob15: float = -1,
+                    prob16: float = -1,
+                    prob17: float = -1,
+                    prob18: float = -1,
+                    prob19: float = -1,
+                    prob20: float = -1,
+                        ):
 
 
 
-    print("he")
-
-    pareto_prob = [0] * 5
+    pareto_prob = [0] * 20
     pareto_prob[0] = prob1/20
 
     pareto_prob[1] = prob2/20
@@ -40,7 +54,22 @@ def algorithm_heuristic(participants: np.ndarray[int],
     pareto_prob[3] = prob4/20
 
     pareto_prob[4] = prob5/20
-    print("pareto_prob")
+    pareto_prob[5] = prob6/20
+    pareto_prob[6] = prob7/20
+    pareto_prob[7] = prob8/20
+    pareto_prob[8] = prob9/20
+    pareto_prob[9] = prob10/20
+    pareto_prob[10] = prob11/20
+    pareto_prob[11] = prob12/20
+    pareto_prob[12] = prob13/20
+    pareto_prob[13] = prob14/20
+    pareto_prob[14] = prob15/20
+    pareto_prob[15] = prob16/20
+    pareto_prob[16] = prob17/20
+    pareto_prob[17] = prob18/20
+    pareto_prob[18] = prob19/20
+    pareto_prob[19] = prob20/20
+
     pareto_probs = {}
     i = 0
     for k, v in fields.items():
@@ -60,14 +89,9 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
 
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 ]#or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1]#or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
 
-    print("2")
 
-    if len(order_cluster ) >=1:
-        val_cluster = 'cluster'
-    else:
-        val_cluster = ''
 
     X = participants[:, order_cluster]
 
@@ -91,7 +115,10 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
     Y = np.unique(Y)
 
-
+    if len(order_cluster ) >=1:
+        val_cluster = X[len(X)-1]
+    else:
+        val_cluster = ''
 
     order_cluster_dict = dict(zip(order_cluster, [list(X)]))
     order_diverse_dict = dict(zip(order_diverse, lister))
@@ -114,7 +141,6 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
     seats = math.ceil(m_data /tables)
     previous_meetings = {}
-    print("3")
     try:
         random = np.random.default_rng(seed)
     except:
@@ -143,10 +169,11 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
     no_cluster_agents = 0
 
-
     if len(order_cluster_dict ) ==1:
+
         cluster_key = next(iter(order_cluster_dict))
         no_cluster_agents = sum(1 for person in peopledata_vals_used if person[cluster_key] == val_cluster)
+
 
 
     n_swap_loops = int(swap_rounds)
@@ -156,16 +183,17 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
     n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
 
+
     allocation_results = n_results
     #print(meet1)
     #meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
     #print(meetval)
-    ''' allocations = []
-    for result in n_results[0]:
-        allocations.append(n_results[0][result])
-
-    allocation_group_outcome = allocations
-
+    allocations = []
+    #for result in n_results[0]:
+     #   allocations.append(n_results[0][result])
+    print("6")
+    #allocation_group_outcome = allocations
+    '''
     d_mult = m_data// (tables**2)
     L_R = ((tables**2) * 8.5 * d_mult * (d_mult-1)) + d_mult * (m_data % (tables**2))
     min_duplicates = max(0, L_R)
@@ -190,11 +218,11 @@ def algorithm_heuristic(participants: np.ndarray[int],
     else:
         # all pairs have met
         allocation_group_links_pp = total_pairs
-
-    # maximum links from round 0 to 1 are a function of table size and number of tables
-    allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
-
     '''
+    # maximum links from round 0 to 1 are a function of table size and number of tables
+    #allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
+
+
 
     # Select the sample with maximum number of meetings.
     # final_results1: list[AllocationEnsemble] = [
@@ -214,7 +242,11 @@ def algorithm_heuristic(participants: np.ndarray[int],
     minimum = [0] * nallocations
     maximum = [0] * nallocations
     final_results2 = max(allocation_results)
-    '''
+    """
+    if val_cluster == '':
+        it = 8
+    else :
+        it = 7
     for j in range(nallocations):
 
         for i in range (0, tables):
@@ -222,7 +254,7 @@ def algorithm_heuristic(participants: np.ndarray[int],
 
         this = [y for x,y in distance.items()]
         this2 = [x for x,y in this]
-        this3 = [x[8] for x in this2]
+        this3 = [x[it] for x in this2]
         #this4 = [x[7] for x in this2]
         #this5 = [x[6] for x in this2]
        # print("mu")
@@ -252,6 +284,58 @@ def algorithm_heuristic(participants: np.ndarray[int],
     #    rank = 1
     #else:
      #   rank = 3
+    print(prob1)
+    if pareto_prob[0] == 0.5:
+      if nallocations == 10:
+        name = "dreamgenraceage"
+      if nallocations == 11:
+        name = "dreamurbdietedu"
+      if nallocations == 12:
+        name = "dreamphotoaudioage"
+      if nallocations == 13:
+        name = "dreamracedietphoto"
+      if nallocations == 14:
+        name = "dreamageeduaudio"
+      if nallocations == 15:
+        name = "dreamgendietage"
+      if nallocations == 16:
+        name = "dreamraceeduaudio"
+      if nallocations == 17:
+        name = "dreamageurbphoto"
+    if pareto_prob[0] == 0.25:
+        if nallocations == 10:
+            name = "heurgenraceage"
+        if nallocations == 11:
+            name = "heururbdietedu"
+        if nallocations == 12:
+            name = "heurphotoaudioage"
+        if nallocations == 13:
+            name = "heurracedietphoto"
+        if nallocations == 14:
+            name = "heurageeduaudio"
+        if nallocations == 15:
+            name = "heurgendietage"
+        if nallocations == 16:
+            name = "heurraceeduaudio"
+        if nallocations == 17:
+            name = "heurageurbphoto"
+    if pareto_prob[0] != pareto_prob[1]:
+        if nallocations == 10:
+            name = "spreadgenraceage"
+        if nallocations == 11:
+            name = "spreadurbdietedu"
+        if nallocations == 12:
+            name = "spreadphotoaudioage"
+        if nallocations == 13:
+            name = "spreadracedietphoto"
+        if nallocations == 14:
+            name = "spreadageeduaudio"
+        if nallocations == 15:
+            name = "spreadgendietage"
+        if nallocations == 16:
+            name = "spreadraceeduaudio"
+        if nallocations == 17:
+            name = "spreadageurbphoto"
 
     #filename = ('mutli cats, rank =' + rank.__str__() + ')' + name + '.csv')
     filename = (name + ".csv")
@@ -261,7 +345,8 @@ def algorithm_heuristic(participants: np.ndarray[int],
         for j in range(0, 10):
            # writer.writerow([1,2,3,4])
             writer.writerow([final[j], div_mean[j], meet0[j], meet1[j], meet2[j], meet3[j], meetval])
-'''
+    """
+    print(meet0, meet1, meet2, meet3, meet4, meet5, "meetsdud")
     return AllocatorResult(final_results2)
 
 def allocate(tables,
@@ -416,6 +501,8 @@ def allocate(tables,
           #      print(pid_meets)
            #     break
             #break
+
+        print(previous_meetings, "meeter1")
         meet0[round_no] = sum(x == 0 for x in previous_meetings.values())
         meet1[round_no] = sum(x == 1 for x in previous_meetings.values())
         meet2[round_no] = sum(x == 2 for x in previous_meetings.values())
@@ -773,6 +860,7 @@ def select_key(pareto,
                demog_scores,
                demog_total):
     relevant_demogs = []
+
     k = list(pareto.keys())[0]
     for i in range (0, demog_total):
         if demog_scores[k][i] == True:

@@ -19,7 +19,6 @@ def algorithm_dream(participants: np.ndarray[int],
                     n_attempts: int = 3,
                     seed: None | int = None):
 
-    print("dream")
     nallocations = len(groups)
     progress_bar = progress_func
     tables = groups[0][0]
