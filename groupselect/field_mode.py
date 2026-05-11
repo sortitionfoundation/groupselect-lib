@@ -4,6 +4,8 @@ from enum import Enum, unique
 @unique
 class FieldMode(Enum):
     Ignore = 0
-    Diversify = 1
-    Cluster = 2
-    Keep = 3
+    Diversify_1 = 1
+    Diversify_2 = 2
+    Diversify_3 = 3
+    Cluster = 4
+    Keep = 5
