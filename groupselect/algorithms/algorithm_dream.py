@@ -1,3 +1,22 @@
+"""DREAM group-allocation algorithm (Barrett & Gal 2024).
+
+Based on: J. Barrett and K. Gal, "DREAM: A Heuristic for Group Allocation
+in Deliberative Democracy Events", arXiv:2410.21451.
+
+.. warning::
+    This module contains the same ``FieldMode.Diversify_1/2/3`` regression
+    as the Legacy module.  Calling :func:`algorithm_dream` with any
+    ``Diversify`` fields raises ``AttributeError``.
+
+.. note::
+    The ``pareto_prob`` parameter is hard-coded to ``0.5`` in the entry
+    function.  Use :func:`algorithm_hermes` for user-configurable weights.
+
+.. note::
+    This module contains large commented-out diagnostic blocks from the
+    development phase.  These are harmless but may be cleaned up later.
+"""
+
 import copy
 import math
 from itertools import product
@@ -23,6 +42,36 @@ def algorithm_dream(
     n_attempts: int = 3,
     seed: None | int = None,
 ):
+    """Run the DREAM Pareto-swap group allocation.
+
+    .. warning::
+        Currently broken for ``FieldMode.Diversify`` fields.  See module
+        docstring.
+
+    Algorithm (per allocation round):
+        1. Random shuffle of participant indices.
+        2. Greedy round-robin seat assignment (cluster participants first).
+        3. Pareto swap phase: for each participant, find candidate swaps
+           in other groups; accept a swap if it is Pareto-improving on
+           diversity and/or meeting scores.  Selection is stochastic,
+           controlled by a hard-coded ``pareto_prob = 0.5``.
+        4. Repeat swap phase ``swap_rounds`` times (currently hard-coded
+           to 1).
+        5. Update ``previous_meetings`` so subsequent rounds are aware of
+           prior pairings.
+
+    Args:
+        participants: 2-D integer participant array.
+        fields: ``{col_index: FieldMode}`` mapping.
+        groups: List of ``(n_groups, n_per_group)`` tuples, one per round.
+        manuals: ``{participant_index: group_index}`` pre-assignments.
+        progress_func: Optional integer progress callback.
+        n_attempts: Number of independent candidate ensembles.
+        seed: Random seed.
+
+    Returns:
+        :class:`~groupselect.AllocatorResult` with the best ensemble.
+    """
 
     nallocations = len(groups)
     progress_bar = progress_func

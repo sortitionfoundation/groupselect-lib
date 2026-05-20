@@ -1,3 +1,19 @@
+"""HERMES group-allocation algorithm (Cowie 2026).
+
+Extends the DREAM algorithm with per-field diversity weights, giving
+practitioners control over the diversity/meeting-uniqueness trade-off on
+a per-demographic-field basis.
+
+Reference: M. Cowie, "Improving Allocation Algorithms for Citizens
+Assemblies", 4th Year Project Report, School of Informatics,
+University of Edinburgh, 2026.
+
+.. note::
+    This module contains debug ``print()`` statements and large
+    commented-out blocks from the development phase.  These do not affect
+    correctness but produce console output.  A cleanup is planned.
+"""
+
 import copy
 import math
 from itertools import product
@@ -25,6 +41,43 @@ def algorithm_hermes(
     seed: None | int = None,
     pareto_probs: dict[int, float] = None,
 ):
+    """Run the HERMES per-field-weighted Pareto-swap group allocation.
+
+    Algorithm (per allocation round):
+        1. Random shuffle of participant indices.
+        2. Greedy round-robin seat assignment (cluster participants first).
+        3. Pareto swap phase: for each participant, find candidate swaps
+           in other groups; a swap is Pareto-improving if it does not worsen
+           either diversity or meeting score.
+        4. Swap selection uses per-field ``pareto_probs`` as stochastic
+           weights: higher value → higher probability of choosing the
+           diversity-improving swap over the meeting-improving swap.
+        5. Diversity threshold per field:
+           ``μ = -0.5 + pareto_probs[field_id]``.
+           Discrepancies below ``μ`` do not trigger corrective swaps.
+        6. ``previous_meetings`` persists across rounds for cumulative
+           meeting optimisation.
+
+    Args:
+        participants: 2-D integer participant array.
+        fields: ``{col_index: FieldMode}`` mapping.
+        groups: List of ``(n_groups, n_per_group)`` tuples, one per round.
+        manuals: ``{participant_index: group_index}`` pre-assignments.
+        progress_func: Optional integer progress callback.
+        n_attempts: Number of independent candidate ensembles.
+        seed: Random seed.
+        pareto_probs: ``{field_index: float}`` mapping diversity weights
+            in ``[0.0, 0.5]`` for every ``Diversify`` field.  Required;
+            an exception is raised for any missing field.
+
+    Returns:
+        :class:`~groupselect.AllocatorResult` with the best ensemble.
+
+    Raises:
+        Exception: If a ``Diversify`` field is missing from
+            ``pareto_probs``, or if ``pareto_probs`` values are outside
+            ``[0.0, 0.5]``.
+    """
     pareto_probs = pareto_probs or {}
     for field_id in fields:
         if fields[field_id] == FieldMode.Diversify:

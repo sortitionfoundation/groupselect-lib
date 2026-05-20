@@ -1,3 +1,14 @@
+"""Legacy greedy group-allocation algorithm (Verpoort 2020).
+
+.. warning::
+    This module references ``FieldMode.Diversify_1``, ``Diversify_2``, and
+    ``Diversify_3``, which do not exist in the current :class:`FieldMode`
+    enum.  Calling :func:`algorithm_legacy` with any ``Diversify`` fields
+    raises ``AttributeError``.  This is a known regression introduced by a
+    later edit.  Fix: replace all ``FieldMode.Diversify_1/2/3`` occurrences
+    with ``FieldMode.Diversify``.
+"""
+
 from typing import Callable
 
 import numpy as np
@@ -21,6 +32,34 @@ def algorithm_legacy(
     n_attempts: int = 100,
     seed: None | int = None,
 ) -> AllocatorResult:
+    """Run the legacy greedy-restart group allocation.
+
+    .. warning::
+        Currently broken for ``FieldMode.Diversify`` fields due to
+        ``FieldMode.Diversify_1/2/3`` references.  See module docstring.
+
+    Algorithm:
+        1. Re-index field values by frequency (most common → 0).
+        2. Sort participants by Cluster then Diversify field values.
+        3. Greedily place each participant in the group with the fewest
+           members sharing their field value.
+        4. Repeat ``n_attempts`` times with a different random shuffle.
+        5. Randomly sample ensembles and return the one with the most
+           unique pairwise meetings.
+
+    Args:
+        participants: 2-D integer participant array.
+        fields: ``{col_index: FieldMode}`` mapping.
+        groups: List of ``(n_groups, n_per_group)`` tuples, one per
+            allocation round.
+        manuals: ``{participant_index: group_index}`` pre-assignments.
+        progress_func: Optional integer progress callback.
+        n_attempts: Number of random-restart attempts.
+        seed: Random seed, or ``None`` for non-deterministic behaviour.
+
+    Returns:
+        :class:`~groupselect.AllocatorResult` with the best ensemble.
+    """
 
     meet0 = [0] * 10
     meet1 = [0] * 10

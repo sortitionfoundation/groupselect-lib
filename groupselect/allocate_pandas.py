@@ -23,6 +23,46 @@ def allocate_pandas(
     settings: None | dict = None,
     return_full: bool = False,
 ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame, AllocatorResult]:
+    """Partition participants into groups, accepting a pandas DataFrame.
+
+    Wraps :func:`allocate_numpy` with automatic integer encoding of
+    categorical columns and a pandas-native result format.
+
+    Args:
+        participants: DataFrame where each row is one participant.  The
+            index must be unique.
+        fields: Mapping from DataFrame column label to
+            :class:`~groupselect.FieldMode`.  All listed columns are
+            cast to pandas ``category`` dtype for encoding.
+        n_part_per_group: Target group size.  Same semantics as in
+            :func:`allocate_numpy`.
+        manuals: Optional ``{participant_index: group_index}`` mapping.
+            Uses integer row positions (not index labels).
+        algorithm: Algorithm to use.
+        progress_func: Optional progress callback.
+        settings: Algorithm-specific kwargs.  When using
+            ``Algorithm.HERMES``, the ``"pareto_probs"`` entry should
+            use column labels as keys; they are automatically translated
+            to integer field indices before being forwarded.
+        return_full: If ``False`` (default), returns only the participants
+            DataFrame with allocation and group columns prepended.  If
+            ``True``, returns a three-tuple.
+
+    Returns:
+        If ``return_full=False``: a DataFrame with columns
+        ``["allocation", "group", <original columns>]``, one row per
+        participant per allocation round.
+
+        If ``return_full=True``: a tuple
+        ``(participants_df, groups_df, AllocatorResult)`` where
+        ``groups_df`` has columns ``["allocation", "group", "participant"]``
+        and ``AllocatorResult`` contains the full
+        :class:`~groupselect.AllocationEnsemble`.
+
+    Raises:
+        Exception: If the DataFrame index is not unique or a field label
+            is not found as a column.
+    """
     # Check that the dataframe index is unique.
     print("enough")
     if not participants.index.is_unique:
@@ -114,6 +154,12 @@ def allocate_pandas(
 
 @pd.api.extensions.register_dataframe_accessor("groupselect")
 class GroupSelectAccessor:
+    """Pandas DataFrame accessor that exposes GroupSelect allocation.
+
+    Registered under the ``groupselect`` namespace so that any DataFrame
+    can call ``df.groupselect.allocate(...)``.
+    """
+
     def __init__(self, df: pd.DataFrame):
         self._df = df
 

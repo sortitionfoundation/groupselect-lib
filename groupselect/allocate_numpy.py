@@ -19,6 +19,42 @@ def allocate_numpy(
     progress_func: None | Callable = None,
     settings: None | dict = None,
 ) -> AllocatorResult:
+    """Partition participants into groups using a specified algorithm.
+
+    Args:
+        participants: 2-D integer array of shape
+            ``(n_participants, n_fields)``.  Each row is one participant;
+            each column is one categorical field encoded as non-negative
+            consecutive integers.
+        fields: Mapping from column index to :class:`~groupselect.FieldMode`.
+            Columns not listed default to ``FieldMode.Ignore``.
+            String values are accepted and matched case-insensitively.
+        n_part_per_group: Target group size.  An integer applies the same
+            size to all allocation rounds; a list of integers produces one
+            round per entry (list length == number of rounds in output).
+            Actual groups may be one smaller when ``n_participants`` is not
+            evenly divisible.
+        manuals: Optional ``{participant_index: group_index}`` mapping of
+            forced pre-assignments.  The algorithm fills the remaining
+            seats around them.
+        algorithm: Which algorithm to use.  Accepts an
+            :class:`~groupselect.Algorithm` member or a case-insensitive
+            string name.  Defaults to ``Algorithm.Legacy``.
+        progress_func: Optional callback called with the current iteration
+            count (integer).  Used by the GUI to update a progress bar.
+        settings: Algorithm-specific keyword arguments forwarded by name
+            to the underlying algorithm function.  Unknown keys are silently
+            ignored.
+
+    Returns:
+        :class:`~groupselect.AllocatorResult` whose ``.ensemble`` attribute
+        is an :class:`~groupselect.AllocationEnsemble` containing one
+        :class:`~groupselect.Allocation` per entry in ``n_part_per_group``.
+
+    Raises:
+        Exception: If any argument fails validation (wrong shape, out-of-range
+            indices, unknown algorithm name, etc.).
+    """
 
     # Check arguments: participants.
     if not np.issubdtype(participants.dtype, np.integer):

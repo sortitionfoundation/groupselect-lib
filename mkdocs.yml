@@ -1,0 +1,41 @@
+site_name: GroupSelect Library
+site_description: >-
+  Python library for partitioning Citizens' Assembly participants
+  into diverse discussion subgroups.
+repo_url: https://github.com/sortitionfoundation/groupselect-lib
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+
+nav:
+  - Home: index.md
+  - Concepts: concepts.md
+  - Quick Start: quickstart.md
+  - Algorithms:
+      - Overview: algorithms/index.md
+      - Legacy: algorithms/legacy.md
+      - DREAM: algorithms/dream.md
+      - HERMES: algorithms/hermes.md
+  - API Reference:
+      - Field modes & types: api/types.md
+      - Allocators: api/allocators.md
+      - Algorithms: api/algorithms.md
