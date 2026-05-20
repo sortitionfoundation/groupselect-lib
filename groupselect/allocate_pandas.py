@@ -50,6 +50,12 @@ def allocate_pandas(participants: pd.DataFrame,
         participants_codes.columns.tolist().index(k): v
         for k, v in fields.items()
     }
+    settings_numpy = settings.copy()
+    if "pareto_probs" in settings:
+        settings_numpy["pareto_probs"] = {
+            participants_codes.columns.tolist().index(k): v
+            for k, v in settings_numpy["pareto_probs"].items()
+        }
 
     # Run allocation with numpy arrays.
     result: AllocatorResult = allocate_numpy(
@@ -59,7 +65,7 @@ def allocate_pandas(participants: pd.DataFrame,
         manuals=manuals,
         algorithm=algorithm,
         progress_func=progress_func,
-        settings=settings,
+        settings=settings_numpy,
     )
 
     # Generate pandas dataframe based on numpy results and return.

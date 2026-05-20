@@ -20,62 +20,20 @@ def algorithm_hermes(participants: np.ndarray[int],
                     progress_func: None | Callable = None,
                     n_attempts: int = 3,
                     seed: None | int = None,
-                    prob1: float = -1,
-                    prob2: float = -1,
-                    prob3: float = -1,
-                    prob4: float = -1,
-                    prob5: float = -1,
-                    prob6: float = -1,
-                    prob7: float = -1,
-                    prob8: float = -1,
-                    prob9: float = -1,
-                    prob10: float = -1,
-                    prob11: float = -1,
-                    prob12: float = -1,
-                    prob13: float = -1,
-                    prob14: float = -1,
-                    prob15: float = -1,
-                    prob16: float = -1,
-                    prob17: float = -1,
-                    prob18: float = -1,
-                    prob19: float = -1,
-                    prob20: float = -1,
-                        ):
+                    pareto_probs: dict[int, float] = None,
+):
+    pareto_probs = pareto_probs or {}
+    for field_id in fields:
+        if fields[field_id]==FieldMode.Diversify_1:
+            if field_id not in pareto_probs:
+                raise Exception(f"Algorithm HERMES requires pareto probability to be passed for diversity fields, but "
+                                f"none found for field {field_id}.")
+            if not (isinstance(pareto_probs[field_id], float) and pareto_probs[field_id] >= 0.0):
+                raise Exception(f"Pareto probability must be positive float but found: {pareto_probs[field_id]}")
 
-
-
-    pareto_prob = [0] * 20
-    pareto_prob[0] = prob1/20
-
-    pareto_prob[1] = prob2/20
-
-    pareto_prob[2] = prob3/20
-
-    pareto_prob[3] = prob4/20
-
-    pareto_prob[4] = prob5/20
-    pareto_prob[5] = prob6/20
-    pareto_prob[6] = prob7/20
-    pareto_prob[7] = prob8/20
-    pareto_prob[8] = prob9/20
-    pareto_prob[9] = prob10/20
-    pareto_prob[10] = prob11/20
-    pareto_prob[11] = prob12/20
-    pareto_prob[12] = prob13/20
-    pareto_prob[13] = prob14/20
-    pareto_prob[14] = prob15/20
-    pareto_prob[15] = prob16/20
-    pareto_prob[16] = prob17/20
-    pareto_prob[17] = prob18/20
-    pareto_prob[18] = prob19/20
-    pareto_prob[19] = prob20/20
-
-    pareto_probs = {}
-    i = 0
-    for k, v in fields.items():
-        if v == FieldMode.Diversify_1:
-            pareto_probs[k] = pareto_prob[i]
-            i = i + 1
+    # Divide all by factor of 20.
+    for field_id in pareto_probs:
+        pareto_probs[field_id] /= 20.0
 
     nallocations = len(groups)
     progress_bar = progress_func
