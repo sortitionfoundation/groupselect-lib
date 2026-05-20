@@ -24,7 +24,7 @@ def algorithm_hermes(participants: np.ndarray[int],
 ):
     pareto_probs = pareto_probs or {}
     for field_id in fields:
-        if fields[field_id]==FieldMode.Diversify_1:
+        if fields[field_id]==FieldMode.Diversify:
             if field_id not in pareto_probs:
                 raise Exception(f"Algorithm HERMES requires pareto probability to be passed for diversity fields, but "
                                 f"none found for field {field_id}.")
@@ -47,7 +47,7 @@ def algorithm_hermes(participants: np.ndarray[int],
 
 
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1]#or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
 
 
 
@@ -990,7 +990,7 @@ def evaluate_actions(ideal_dist,
         actions_for_label = []
         if table_dist[index] > ideal_dist[index]:
             for a, b in zip(table_discrepancies, cat_labels):
-                if diversity_val == FieldMode.Diversify_1 and a < threshold:
+                if diversity_val == FieldMode.Diversify and a < threshold:
                        actions_for_label.append(b)
                 #elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
                  #      actions_for_label.append(b)

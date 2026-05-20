@@ -9,7 +9,6 @@ class Algorithm(Enum):
     Legacy = 0
     DREAM = 1
     HERMES = 2
-    # Heuristic = 1  # TODO: Add heuristic algorithm
 
 # Define functions of algorithms.
 algorithm_funcs = {
