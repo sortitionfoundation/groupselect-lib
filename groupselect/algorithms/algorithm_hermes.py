@@ -13,7 +13,7 @@ from groupselect.field_mode import FieldMode
 from groupselect.allocation import Allocation, ParticipantGroup, AllocationEnsemble, AllocatorResult
 
 
-def algorithm_heuristic(participants: np.ndarray[int],
+def algorithm_hermes(participants: np.ndarray[int],
                     fields: dict[int, FieldMode],
                     groups: list[(int, int)],
                     manuals: dict[int, int],
