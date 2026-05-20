@@ -28,12 +28,8 @@ def algorithm_hermes(participants: np.ndarray[int],
             if field_id not in pareto_probs:
                 raise Exception(f"Algorithm HERMES requires pareto probability to be passed for diversity fields, but "
                                 f"none found for field {field_id}.")
-            if not (isinstance(pareto_probs[field_id], float) and pareto_probs[field_id] >= 0.0):
-                raise Exception(f"Pareto probability must be positive float but found: {pareto_probs[field_id]}")
-
-    # Divide all by factor of 20.
-    for field_id in pareto_probs:
-        pareto_probs[field_id] /= 20.0
+            if not (isinstance(pareto_probs[field_id], float) and 0.0 <= pareto_probs[field_id] <= 0.5):
+                raise Exception(f"Pareto probability must be float in range [0.0, 0.5] but found: {pareto_probs[field_id]}")
 
     nallocations = len(groups)
     progress_bar = progress_func
@@ -1007,5 +1003,3 @@ def evaluate_actions(ideal_dist,
 
 
     return actions
-
-
