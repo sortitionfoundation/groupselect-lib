@@ -12,3 +12,14 @@ dependencies = [
     "numpy>=2.3.4",
     "pytest>=9.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.13",
+]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+extend-select = ["E501"]

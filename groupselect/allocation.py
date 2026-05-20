@@ -21,7 +21,7 @@ class AllocationEnsemble(list[Allocation]):
             for allocation in self
             for group in allocation
             for p_id in group
-            if p_id==p_id
+            if p_id == p_id
         }
 
     def calc_total_number_pairs(self):
@@ -65,14 +65,13 @@ class AllocationEnsemble(list[Allocation]):
 
         return (
             ((rel_score - min_score) / (max_score - min_score))
-            if max_score > min_score else
-            1.0
+            if max_score > min_score
+            else 1.0
         )
 
     def calc_n_meetings_alo(self) -> int:
         return sum(
-            len(p_stats)
-            for p_id, p_stats in self.calc_meetings().items()
+            len(p_stats) for p_id, p_stats in self.calc_meetings().items()
         )
 
     def calc_meetings(self) -> dict[int, dict[int, int]]:
@@ -121,11 +120,12 @@ class AllocationEnsemble(list[Allocation]):
 
         return ret / len(self)
 
-    def calc_diversity_score(self, participants_data: np.ndarray[int] | pd.DataFrame) -> float:
+    def calc_diversity_score(
+        self, participants_data: np.ndarray[int] | pd.DataFrame
+    ) -> float:
         if isinstance(participants_data, pd.DataFrame):
             participants_data = (
-                participants_data
-                .astype("category")
+                participants_data.astype("category")
                 .apply(lambda col: col.cat.codes)
                 .to_numpy()
             )

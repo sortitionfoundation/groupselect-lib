@@ -1,35 +1,45 @@
-
 import copy
 import math
-import statistics
 from itertools import product
 from typing import Callable
-import csv
 
 import numpy as np
 
 
 from groupselect.field_mode import FieldMode
-from groupselect.allocation import Allocation, ParticipantGroup, AllocationEnsemble, AllocatorResult
+from groupselect.allocation import (
+    Allocation,
+    ParticipantGroup,
+    AllocationEnsemble,
+    AllocatorResult,
+)
 
 
-def algorithm_hermes(participants: np.ndarray[int],
-                    fields: dict[int, FieldMode],
-                    groups: list[(int, int)],
-                    manuals: dict[int, int],
-                    progress_func: None | Callable = None,
-                    n_attempts: int = 3,
-                    seed: None | int = None,
-                    pareto_probs: dict[int, float] = None,
+def algorithm_hermes(
+    participants: np.ndarray[int],
+    fields: dict[int, FieldMode],
+    groups: list[(int, int)],
+    manuals: dict[int, int],
+    progress_func: None | Callable = None,
+    n_attempts: int = 3,
+    seed: None | int = None,
+    pareto_probs: dict[int, float] = None,
 ):
     pareto_probs = pareto_probs or {}
     for field_id in fields:
-        if fields[field_id]==FieldMode.Diversify:
+        if fields[field_id] == FieldMode.Diversify:
             if field_id not in pareto_probs:
-                raise Exception(f"Algorithm HERMES requires pareto probability to be passed for diversity fields, but "
-                                f"none found for field {field_id}.")
-            if not (isinstance(pareto_probs[field_id], float) and 0.0 <= pareto_probs[field_id] <= 0.5):
-                raise Exception(f"Pareto probability must be float in range [0.0, 0.5] but found: {pareto_probs[field_id]}")
+                raise Exception(
+                    f"Algorithm HERMES requires pareto probability to be passed for diversity fields, but "
+                    f"none found for field {field_id}."
+                )
+            if not (
+                isinstance(pareto_probs[field_id], float)
+                and 0.0 <= pareto_probs[field_id] <= 0.5
+            ):
+                raise Exception(
+                    f"Pareto probability must be float in range [0.0, 0.5] but found: {pareto_probs[field_id]}"
+                )
 
     nallocations = len(groups)
     progress_bar = progress_func
@@ -38,14 +48,8 @@ def algorithm_hermes(participants: np.ndarray[int],
         tables = value[0]
         seats = value
 
-
-
-
-
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
     order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
-
-
 
     X = participants[:, order_cluster]
 
@@ -54,30 +58,21 @@ def algorithm_hermes(participants: np.ndarray[int],
     Y = participants[:, order_diverse]
     lister = [None] * len(order_diverse)
 
-
     for i in range(0, len(order_diverse)):
-
-
         lister[i] = [int(item[i]) for item in Y]
 
         lister[i] = np.unique(lister[i])
         lister[i] = lister[i].tolist()
 
-
-
-
-
     Y = np.unique(Y)
 
-    if len(order_cluster ) >=1:
-        val_cluster = X[len(X)-1]
+    if len(order_cluster) >= 1:
+        val_cluster = X[len(X) - 1]
     else:
-        val_cluster = ''
+        val_cluster = ""
 
     order_cluster_dict = dict(zip(order_cluster, [list(X)]))
     order_diverse_dict = dict(zip(order_diverse, lister))
-
-
 
     swap_rounds = 1
 
@@ -85,23 +80,29 @@ def algorithm_hermes(participants: np.ndarray[int],
 
     m_data = participants.shape[0]
 
-    '''
+    """
     cluster_tables: int,
     m_data: int,
     pareto_prob: float,
     swap_rounds: int,
 
-    progress_bar: any == None'''
+    progress_bar: any == None"""
 
-    seats = math.ceil(m_data /tables)
+    seats = math.ceil(m_data / tables)
     previous_meetings = {}
     try:
         random = np.random.default_rng(seed)
     except:
-        raise Exception("Error: Random seed incorrect!", "There was a problem setting the random seed. Please check your input!")
+        raise Exception(
+            "Error: Random seed incorrect!",
+            "There was a problem setting the random seed. Please check your input!",
+        )
 
-    if (nallocations < 1):
-        raise Exception("Error: Wrong allocation number!", "The number of computed allocations must at least be 1!")
+    if nallocations < 1:
+        raise Exception(
+            "Error: Wrong allocation number!",
+            "The number of computed allocations must at least be 1!",
+        )
 
     # if len(tables)>1: do this bit
 
@@ -114,40 +115,62 @@ def algorithm_hermes(participants: np.ndarray[int],
     # order_cluster_dict = get_field_cluster_dict()
     # order_diverse_dict = get_field_diverse_dict()
 
-
     if not order_diverse_dict:
-        raise Exception("Error: One diversification field required!", "You have to set at least one field that is used to diversify people across groups.")
+        raise Exception(
+            "Error: One diversification field required!",
+            "You have to set at least one field that is used to diversify people across groups.",
+        )
 
-    if len(order_cluster_dict ) >1:
-        raise Exception("Error: Only one cluster field permitted. Please reduce the number of cluster fields.")
+    if len(order_cluster_dict) > 1:
+        raise Exception(
+            "Error: Only one cluster field permitted. Please reduce the number of cluster fields."
+        )
 
     no_cluster_agents = 0
 
-    if len(order_cluster_dict ) ==1:
-
+    if len(order_cluster_dict) == 1:
         cluster_key = next(iter(order_cluster_dict))
-        no_cluster_agents = sum(1 for person in peopledata_vals_used if person[cluster_key] == val_cluster)
-
-
+        no_cluster_agents = sum(
+            1
+            for person in peopledata_vals_used
+            if person[cluster_key] == val_cluster
+        )
 
     n_swap_loops = int(swap_rounds)
     if n_swap_loops < 1:
-        raise Exception("Error: at least one round of meeting optimization must be specified (in *advanced settings*)")
+        raise Exception(
+            "Error: at least one round of meeting optimization must be specified (in *advanced settings*)"
+        )
 
-
-    n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
-
+    n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(
+        tables,
+        peopledata_vals_used,
+        order_cluster_dict,
+        order_diverse_dict,
+        m_data,
+        nallocations,
+        cluster_tables,
+        pareto_probs,
+        n_swap_loops,
+        progress_bar,
+        previous_meetings,
+        no_cluster_agents,
+        val_cluster,
+        manuals,
+        random,
+        fields,
+    )
 
     allocation_results = n_results
-    #print(meet1)
-    #meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
-    #print(meetval)
+    # print(meet1)
+    # meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
+    # print(meetval)
     allocations = []
-    #for result in n_results[0]:
-     #   allocations.append(n_results[0][result])
+    # for result in n_results[0]:
+    #   allocations.append(n_results[0][result])
     print("6")
-    #allocation_group_outcome = allocations
-    '''
+    # allocation_group_outcome = allocations
+    """
     d_mult = m_data// (tables**2)
     L_R = ((tables**2) * 8.5 * d_mult * (d_mult-1)) + d_mult * (m_data % (tables**2))
     min_duplicates = max(0, L_R)
@@ -172,11 +195,9 @@ def algorithm_hermes(participants: np.ndarray[int],
     else:
         # all pairs have met
         allocation_group_links_pp = total_pairs
-    '''
+    """
     # maximum links from round 0 to 1 are a function of table size and number of tables
-    #allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
-
-
+    # allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
 
     # Select the sample with maximum number of meetings.
     # final_results1: list[AllocationEnsemble] = [
@@ -185,11 +206,11 @@ def algorithm_hermes(participants: np.ndarray[int],
     # ]
     distance = {}
 
-    #for i in range (0, tables):
-     #   distance[i] = evaluate_demographics(i, peopledata_vals_used, order_diverse_dict, m_data, fields)
+    # for i in range (0, tables):
+    #   distance[i] = evaluate_demographics(i, peopledata_vals_used, order_diverse_dict, m_data, fields)
 
-    #distances = evaluate_demographics()
-    #print(distances, "di
+    # distances = evaluate_demographics()
+    # print(distances, "di
 
     final = [0] * nallocations
     div_mean = [0] * nallocations
@@ -303,22 +324,25 @@ def algorithm_hermes(participants: np.ndarray[int],
     print(meet0, meet1, meet2, meet3, meet4, meet5, "meetsdud")
     return AllocatorResult(final_results2)
 
-def allocate(tables,
-             peopledata_vals_used,
-             order_cluster_dict,
-             order_diverse_dict,
-             m_data,
-             nallocations,
-             cluster_tables,
-             pareto_probs,
-             n_swap_loops,
-             progress_bar,
-             previous_meetings,
-             no_cluster_agents,
-             val_cluster,
-             manuals,
-             random,
-             fields):
+
+def allocate(
+    tables,
+    peopledata_vals_used,
+    order_cluster_dict,
+    order_diverse_dict,
+    m_data,
+    nallocations,
+    cluster_tables,
+    pareto_probs,
+    n_swap_loops,
+    progress_bar,
+    previous_meetings,
+    no_cluster_agents,
+    val_cluster,
+    manuals,
+    random,
+    fields,
+):
     n_rounds = nallocations
 
     previous_meetings_max = [0] * nallocations
@@ -346,23 +370,21 @@ def allocate(tables,
     allocations_list = {}
 
     for i in range(m_data):
-        for j in range( i +1, m_data):
-            pair = (i ,j)
+        for j in range(i + 1, m_data):
+            pair = (i, j)
             if pair not in previous_meetings:
                 previous_meetings[pair] = 0
 
     # allocation_attempts : AllocationEnsemble = AllocationEnsemble()
     allocation_attempts: list[AllocationEnsemble] = [
-        AllocationEnsemble()
-        for _ in range(1)
+        AllocationEnsemble() for _ in range(1)
     ]
 
-
     for round_no in range(n_rounds):
-        if progress_bar: progress_bar(round_no +1)
+        if progress_bar:
+            progress_bar(round_no + 1)
 
-
-        if not(isinstance(tables, int)):
+        if not (isinstance(tables, int)):
             no_tables = tables[round_no]
         else:
             no_tables = tables
@@ -371,32 +393,51 @@ def allocate(tables,
 
         seats = math.ceil(m_data / no_tables)
 
-        min_cluster_tables = math.ceil(no_cluster_agents /seats)
+        min_cluster_tables = math.ceil(no_cluster_agents / seats)
 
         n_cluster_tables = min(min_cluster_tables + cluster_tables, tables)
         no_smaller_tables = no_tables - no_larger_tables
 
         if no_larger_tables == 0:
-            template = [[None for s in range(seats)] for r in range(no_smaller_tables)]
+            template = [
+                [None for s in range(seats)] for r in range(no_smaller_tables)
+            ]
         else:
-            template = [[None for s in range(seats)] for r in range(no_larger_tables)] + \
-                [[None for s in range(seats - 1)] for r in range(no_smaller_tables)]
+            template = [
+                [None for s in range(seats)] for r in range(no_larger_tables)
+            ] + [
+                [None for s in range(seats - 1)]
+                for r in range(no_smaller_tables)
+            ]
 
         meetings_previous_round = previous_meetings.copy()
 
-        '''round_assign_pre, round_assign_swap, meetings_pre, '''
-        allocation = run_round(template, n_swap_loops, seats, m_data, manuals, n_cluster_tables, order_cluster_dict,
-                               order_diverse_dict, peopledata_vals_used, val_cluster, no_tables, previous_meetings,
-                               pareto_probs, random, fields)
+        """round_assign_pre, round_assign_swap, meetings_pre, """
+        allocation = run_round(
+            template,
+            n_swap_loops,
+            seats,
+            m_data,
+            manuals,
+            n_cluster_tables,
+            order_cluster_dict,
+            order_diverse_dict,
+            peopledata_vals_used,
+            val_cluster,
+            no_tables,
+            previous_meetings,
+            pareto_probs,
+            random,
+            fields,
+        )
 
         allocation = Allocation(
-            ParticipantGroup(p_id for p_id in group)
-            for group in allocation
+            ParticipantGroup(p_id for p_id in group) for group in allocation
         )
         for n, ensemble in enumerate(allocation_attempts):
             ensemble.append(allocation)
 
-        '''pre_occurences = {}
+        """pre_occurences = {}
         for value in meetings_pre.values():
            pre_occurences[value] = pre_occurences.get(value, 0) + 1
         pre_meeting_dist[round_no] = pre_occurences
@@ -428,14 +469,14 @@ def allocate(tables,
         allocations_list[round_no] = round_assign_swap
 
         allocations_list, pre_meeting_dist, post_meeting_dist, new_meetings_in_round, pre_balance, post_balance, 
-        '''
+        """
 
-       # print(allocation)
-       # print(previous_meetings)
+        # print(allocation)
+        # print(previous_meetings)
 
         values = [0] * 5
 
-        #for key, value in previous_meetings.items():
+        # for key, value in previous_meetings.items():
         #    i = 0
         #    print("issue")
         #    for table in allocation:
@@ -446,15 +487,14 @@ def allocate(tables,
         #                print(key)
         #                values[i] = values[i] + value
         #        i = i + 1
-        #print(values, "values")
+        # print(values, "values")
 
-
-       #for table in allocation:
+        # for table in allocation:
         #    for pid in table:
-         #       pid_meets = (pid in x for x in previous_meetings.keys())
-          #      print(pid_meets)
-           #     break
-            #break
+        #       pid_meets = (pid in x for x in previous_meetings.keys())
+        #      print(pid_meets)
+        #     break
+        # break
 
         print(previous_meetings, "meeter1")
         meet0[round_no] = sum(x == 0 for x in previous_meetings.values())
@@ -463,38 +503,36 @@ def allocate(tables,
         meet3[round_no] = sum(x == 3 for x in previous_meetings.values())
         meet4[round_no] = sum(x == 4 for x in previous_meetings.values())
         meet5[round_no] = sum(x == 5 for x in previous_meetings.values())
-        #meet6[round_no] = sum(x == 6 for x in previous_meetings.values())
-        #meet7[round_no] = sum(x == 7 for x in previous_meetings.values())
-        #meet8[round_no] = sum(x == 8 for x in previous_meetings.values())
-        #meet9[round_no] = sum(x == 9 for x in previous_meetings.values())
-        #meet10[round_no] = sum(x == 10 for x in previous_meetings.values())
+        # meet6[round_no] = sum(x == 6 for x in previous_meetings.values())
+        # meet7[round_no] = sum(x == 7 for x in previous_meetings.values())
+        # meet8[round_no] = sum(x == 8 for x in previous_meetings.values())
+        # meet9[round_no] = sum(x == 9 for x in previous_meetings.values())
+        # meet10[round_no] = sum(x == 10 for x in previous_meetings.values())
 
-        #previous_meetings_max[round_no] = max(previous_meetings.values())
-        #previous_meetings_min[round_no] = min(previous_meetings.values())
-        #round_meetings_mean[round_no] = statistics.mean(previous_meetings.values())
-        #print(round_meetings_mean[0:round_no+1])
-        #print(statistics.mean(round_meetings_mean[0:round_no+1]))
-        #total_meetings_mean[round_no] = statistics.mean(round_meetings_mean[0:round_no+1])
+        # previous_meetings_max[round_no] = max(previous_meetings.values())
+        # previous_meetings_min[round_no] = min(previous_meetings.values())
+        # round_meetings_mean[round_no] = statistics.mean(previous_meetings.values())
+        # print(round_meetings_mean[0:round_no+1])
+        # print(statistics.mean(round_meetings_mean[0:round_no+1]))
+        # total_meetings_mean[round_no] = statistics.mean(round_meetings_mean[0:round_no+1])
 
-    #print(round_meetings_mean)
-   # if pareto_prob == 0.3:
-   #     filename = '10alloc2.csv'
-   # elif pareto_prob == 0.5:
-   #     filename = '10alloc.csv'
-   # else:
-   #     filename = '10alloc3.csv'
+    # print(round_meetings_mean)
+    # if pareto_prob == 0.3:
+    #     filename = '10alloc2.csv'
+    # elif pareto_prob == 0.5:
+    #     filename = '10alloc.csv'
+    # else:
+    #     filename = '10alloc3.csv'
 
-   # with open(filename, 'w', newline='') as csvfile:
-   #     writer = csv.writer(csvfile)
-   #     writer.writerow(['round_no', 'meet0', 'meet1', 'meet2', 'meet3', 'meet4', 'meet5', 'meet6', 'meet7', 'meet8', 'meet9', 'meet10'])
-   #     for i in range(n_rounds):
-   #         writer.writerow([i, meet0[i], meet1[i], meet2[i], meet3[i], meet4[i], meet5[i], meet6[i], meet7[i], meet8[i], meet9[i], meet10[i]])
+    # with open(filename, 'w', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow(['round_no', 'meet0', 'meet1', 'meet2', 'meet3', 'meet4', 'meet5', 'meet6', 'meet7', 'meet8', 'meet9', 'meet10'])
+    #     for i in range(n_rounds):
+    #         writer.writerow([i, meet0[i], meet1[i], meet2[i], meet3[i], meet4[i], meet5[i], meet6[i], meet7[i], meet8[i], meet9[i], meet10[i]])
     return allocation_attempts, meet0, meet1, meet2, meet3, meet4, meet5
 
 
-def calculate_ideal_balance(cats_diverse,
-                            m_data,
-                            people):
+def calculate_ideal_balance(cats_diverse, m_data, people):
     ideal_balance = {}
     for demog in cats_diverse:
         counts = [0] * len(cats_diverse[demog])
@@ -503,7 +541,6 @@ def calculate_ideal_balance(cats_diverse,
                 if row[demog] == category:
                     counts[i] += 1
         ideal_balance[demog] = [count / m_data for count in counts]
-
 
     return ideal_balance
 
@@ -523,21 +560,23 @@ def averages_from_evals(evaluations: dict):
     return averages
 
 
-def run_round(template,
-              n_swap_loops,
-              seats,
-              m_data,
-              manual_pids,
-              n_cluster_tables,
-              cats_cluster,
-              cats_diverse,
-              people,
-              val_cluster,
-              no_tables,
-              previous_meetings,
-              pareto_probs,
-              random,
-              fields) -> Allocation:
+def run_round(
+    template,
+    n_swap_loops,
+    seats,
+    m_data,
+    manual_pids,
+    n_cluster_tables,
+    cats_cluster,
+    cats_diverse,
+    people,
+    val_cluster,
+    no_tables,
+    previous_meetings,
+    pareto_probs,
+    random,
+    fields,
+) -> Allocation:
     allocations = copy.deepcopy(template)
 
     all_pids = list(range(m_data))
@@ -555,20 +594,27 @@ def run_round(template,
         for index, person in enumerate(people):
             if person[next(iter(cats_cluster))] == val_cluster:
                 cluster_individuals.append(index)
-        cluster_individuals = [x for x in cluster_individuals if x not in manual_pids]
+        cluster_individuals = [
+            x for x in cluster_individuals if x not in manual_pids
+        ]
 
         chosen_chair = 0
 
-        total_clustering_spaces = sum(allocations[index].count(None) for index in cluster_table_index)
+        total_clustering_spaces = sum(
+            allocations[index].count(None) for index in cluster_table_index
+        )
 
         if len(cluster_individuals) > total_clustering_spaces:
-            raise ValueError("Too many manual allocations to clustering tables: please reduce manual allocations.")
+            raise ValueError(
+                "Too many manual allocations to clustering tables: please reduce manual allocations."
+            )
         for agent in cluster_individuals:
             agent_assigned = 0
-            while (agent_assigned == 0):
+            while agent_assigned == 0:
                 table_no = chosen_chair % len(cluster_table_index)
                 seat_no = math.floor(
-                    chosen_chair / len(cluster_table_index) % seats)
+                    chosen_chair / len(cluster_table_index) % seats
+                )
                 if allocations[table_no][seat_no] is None:
                     allocations[table_no][seat_no] = agent
                     agent_assigned = 1
@@ -576,12 +622,14 @@ def run_round(template,
     else:
         cluster_individuals = []
 
-    non_cluster_individuals = [x for x in shuffled_pids if x not in cluster_individuals]
+    non_cluster_individuals = [
+        x for x in shuffled_pids if x not in cluster_individuals
+    ]
     chosen_chair = 0
 
     for agent in non_cluster_individuals:
         agent_assigned = 0
-        while (agent_assigned == 0):
+        while agent_assigned == 0:
             table_no = chosen_chair % no_tables
             seat_no = math.floor(chosen_chair / no_tables % seats)
             if allocations[table_no][seat_no] is None:
@@ -590,83 +638,131 @@ def run_round(template,
             chosen_chair += 1
 
     if n_swap_loops == 1:
-        pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
+        pareto_allocations = pareto_swaps(
+            shuffled_pids,
+            cluster_individuals,
+            cluster_table_index,
+            allocations,
+            people,
+            cats_diverse,
+            manual_pids,
+            previous_meetings,
+            m_data,
+            pareto_probs,
+            random,
+            fields,
+        )
     else:
-        pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
+        pareto_allocations = pareto_swaps(
+            shuffled_pids,
+            cluster_individuals,
+            cluster_table_index,
+            allocations,
+            people,
+            cats_diverse,
+            manual_pids,
+            previous_meetings,
+            m_data,
+            pareto_probs,
+            random,
+            fields,
+        )
         for swap_round in range(1, n_swap_loops):
-            pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index,
-                                              pareto_allocations, people, cats_diverse, manual_pids, previous_meetings,
-                                              m_data, pareto_probs, random, fields)
+            pareto_allocations = pareto_swaps(
+                shuffled_pids,
+                cluster_individuals,
+                cluster_table_index,
+                pareto_allocations,
+                people,
+                cats_diverse,
+                manual_pids,
+                previous_meetings,
+                m_data,
+                pareto_probs,
+                random,
+                fields,
+            )
 
     raw_meetings = previous_meetings.copy()
 
     for sublist in pareto_allocations:
-
         for i in range(len(sublist)):
-
             for j in range(i + 1, len(sublist)):
-                pair = (min(sublist[i], sublist[j]),
-                        max(sublist[i], sublist[j]))
+                pair = (
+                    min(sublist[i], sublist[j]),
+                    max(sublist[i], sublist[j]),
+                )
 
                 previous_meetings[pair] += 1
 
     for sublist in allocations:
         for i in range(len(sublist)):
             for j in range(i + 1, len(sublist)):
-                pair = (min(sublist[i], sublist[j]),
-                        max(sublist[i], sublist[j]))
+                pair = (
+                    min(sublist[i], sublist[j]),
+                    max(sublist[i], sublist[j]),
+                )
                 # Increment count for the pair in the dictionary
                 raw_meetings[pair] += 1
 
     this_alloc = Allocation(
-        ParticipantGroup(list)
-        for list in pareto_allocations
+        ParticipantGroup(list) for list in pareto_allocations
     )
 
-    '''allocations, pareto_allocations, raw_meetings, '''
+    """allocations, pareto_allocations, raw_meetings, """
 
     return this_alloc
 
 
-def pareto_swaps(shuffled_pids,
-                 cluster_individuals,
-                 cluster_table_index,
-                 temp_allocations,
-                 people,
-                 cats_diverse,
-                 manual_pids,
-                 previous_meetings,
-                 m_data,
-                 pareto_probs,
-                 random,
-                 fields):
+def pareto_swaps(
+    shuffled_pids,
+    cluster_individuals,
+    cluster_table_index,
+    temp_allocations,
+    people,
+    cats_diverse,
+    manual_pids,
+    previous_meetings,
+    m_data,
+    pareto_probs,
+    random,
+    fields,
+):
     temp_allocations_update = temp_allocations.copy()
 
     table_meeting_evaluations = {}
     table_demog_evaluations = {}
     for index, table in enumerate(temp_allocations_update):
-        table_meeting_evaluations[index] = evaluate_meetings(table, previous_meetings)
+        table_meeting_evaluations[index] = evaluate_meetings(
+            table, previous_meetings
+        )
         table_demog_evaluations[index] = {}
 
         table_demog_evaluations[index] = evaluate_demographics(
-            temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
-
+            temp_allocations_update,
+            index,
+            people,
+            cats_diverse,
+            m_data,
+            fields,
+            pareto_probs,
+        )
 
     for pid in shuffled_pids:
-
         for index, table in enumerate(temp_allocations_update):
             if pid in table:
                 table_no = index
 
-        pid_info = {key: people[pid][key]
-                    for key in people[pid] if key in cats_diverse}
+        pid_info = {
+            key: people[pid][key] for key in people[pid] if key in cats_diverse
+        }
 
         candidate_demogs = {}
 
         for demog in cats_diverse:
-            candidate_demogs[demog] = table_demog_evaluations[table_no][1][demog][pid_info[demog]]
+            candidate_demogs[demog] = table_demog_evaluations[table_no][1][
+                demog
+            ][pid_info[demog]]
 
         candidate_profiles = generate_combinations(candidate_demogs, pid_info)
         candidate_swaps = {}
@@ -676,94 +772,141 @@ def pareto_swaps(shuffled_pids,
 
         demog_scores = [[False] * (demog_total)] * m_data
 
-
         for profile in candidate_profiles:
             if pid in cluster_individuals:
-                candidate_swap_tables = [x for x in table_demog_evaluations if (
-                        x != table_no) and (x in cluster_table_index)]
+                candidate_swap_tables = [
+                    x
+                    for x in table_demog_evaluations
+                    if (x != table_no) and (x in cluster_table_index)
+                ]
             else:
                 candidate_swap_tables = [
-                    x for x in table_demog_evaluations if x != table_no]
+                    x for x in table_demog_evaluations if x != table_no
+                ]
             for candidate_table in candidate_swap_tables:
                 demog_pareto = [False] * (demog_total)
                 pareto_score = 0
                 pareto_profile = table_demog_evaluations[candidate_table][1]
                 table_valid = True
                 for index, demog in enumerate(pareto_profile):
-
-                    if pid_info[demog] in pareto_profile[demog][profile[index]]:
-
-                        #print(fields[list(cats_diverse.keys())[list(cats_diverse.values()).index()]])
-                        #diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cats_labels)]]
+                    if (
+                        pid_info[demog]
+                        in pareto_profile[demog][profile[index]]
+                    ):
+                        # print(fields[list(cats_diverse.keys())[list(cats_diverse.values()).index()]])
+                        # diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cats_labels)]]
                         diversity_val = fields[demog]
-                        #if diversity_val == FieldMode.Diversify_3:
-                         #   pareto_score += 1
-                          #  rank3_score += 1
-                       # elif diversity_val == FieldMode.Diversify_2:
+                        # if diversity_val == FieldMode.Diversify_3:
+                        #   pareto_score += 1
+                        #  rank3_score += 1
+                        # elif diversity_val == FieldMode.Diversify_2:
                         #    pareto_score += 1
-                         #   rank2_score += 1
-                        #else:
+                        #   rank2_score += 1
+                        # else:
                         pareto_score += 1
-                        demog_pareto[demog-1] = True
+                        demog_pareto[demog - 1] = True
 
                     elif pid_info[demog] != profile[index]:
                         table_valid = False
                         break
                 if table_valid:
                     if pid in cluster_individuals:
-                        for swap_pid in temp_allocations_update[candidate_table]:
+                        for swap_pid in temp_allocations_update[
+                            candidate_table
+                        ]:
                             if swap_pid not in manual_pids:
-                                if tuple(people[swap_pid][key] for key in people[swap_pid] if
-                                         key in cats_diverse) == profile:
-                                    candidate_swaps[swap_pid] = pareto_score + \
-                                                                candidate_profiles[profile]
+                                if (
+                                    tuple(
+                                        people[swap_pid][key]
+                                        for key in people[swap_pid]
+                                        if key in cats_diverse
+                                    )
+                                    == profile
+                                ):
+                                    candidate_swaps[swap_pid] = (
+                                        pareto_score
+                                        + candidate_profiles[profile]
+                                    )
 
                                     for i in range(0, demog_total):
                                         if demog_pareto[i - 1] == True:
-                                            demog_scores[swap_pid][i - 1] = True
+                                            demog_scores[swap_pid][i - 1] = (
+                                                True
+                                            )
 
                     else:
-                        for swap_pid in temp_allocations_update[candidate_table]:
+                        for swap_pid in temp_allocations_update[
+                            candidate_table
+                        ]:
                             if swap_pid not in cluster_individuals:
                                 if swap_pid not in manual_pids:
-                                    if tuple(people[swap_pid][key] for key in people[swap_pid] if
-                                             key in cats_diverse) == profile:
-
-
-
-                                        candidate_swaps[swap_pid] = pareto_score + \
-                                                                    candidate_profiles[profile]
+                                    if (
+                                        tuple(
+                                            people[swap_pid][key]
+                                            for key in people[swap_pid]
+                                            if key in cats_diverse
+                                        )
+                                        == profile
+                                    ):
+                                        candidate_swaps[swap_pid] = (
+                                            pareto_score
+                                            + candidate_profiles[profile]
+                                        )
 
                                         for i in range(0, demog_total):
-                                            if demog_pareto[i-1] == True:
-                                                demog_scores[swap_pid][i-1] = True
-
+                                            if demog_pareto[i - 1] == True:
+                                                demog_scores[swap_pid][
+                                                    i - 1
+                                                ] = True
 
         if len(candidate_swaps) == 0:
             continue
         candidate_meetings = {}
         for swap in candidate_swaps:
-            candidate_meetings[swap] = evaluate_swap(pid, swap, temp_allocations_update, table_meeting_evaluations,
-                                                      previous_meetings)
+            candidate_meetings[swap] = evaluate_swap(
+                pid,
+                swap,
+                temp_allocations_update,
+                table_meeting_evaluations,
+                previous_meetings,
+            )
 
-        candidate_swaps = {key: value for key, value in candidate_swaps.items() if (
-                candidate_swaps[key] > 0) or (candidate_swaps[key] == 0 and candidate_meetings[key] > 0)}
+        candidate_swaps = {
+            key: value
+            for key, value in candidate_swaps.items()
+            if (candidate_swaps[key] > 0)
+            or (candidate_swaps[key] == 0 and candidate_meetings[key] > 0)
+        }
 
         if len(candidate_swaps) == 0:
             continue
 
         distinct_candidates = {}
         for distinct_value in {value for value in candidate_swaps.values()}:
-
             distinct_keys = {
-                key for key, value in candidate_swaps.items() if value == distinct_value}
+                key
+                for key, value in candidate_swaps.items()
+                if value == distinct_value
+            }
             max_meetings = max(
-                value for key, value in candidate_meetings.items() if key in distinct_keys)
+                value
+                for key, value in candidate_meetings.items()
+                if key in distinct_keys
+            )
 
-            distinct_candidates.update({key: value for key, value in candidate_swaps.items(
-            ) if (value == distinct_value) and (candidate_meetings[key] == max_meetings)})
-        distinct_meetings = {key: value for key, value in candidate_meetings.items(
-        ) if key in distinct_candidates}
+            distinct_candidates.update(
+                {
+                    key: value
+                    for key, value in candidate_swaps.items()
+                    if (value == distinct_value)
+                    and (candidate_meetings[key] == max_meetings)
+                }
+            )
+        distinct_meetings = {
+            key: value
+            for key, value in candidate_meetings.items()
+            if key in distinct_candidates
+        }
         reverse_mapping = {}
         for key, value in distinct_candidates.items():
             if value not in reverse_mapping:
@@ -773,17 +916,31 @@ def pareto_swaps(shuffled_pids,
         for value, keys in reverse_mapping.items():
             final_candidates[random.choice(keys)] = value
         final_meetings = {
-            key: value for key, value in distinct_meetings.items() if key in final_candidates}
+            key: value
+            for key, value in distinct_meetings.items()
+            if key in final_candidates
+        }
 
         keys_to_remove = set()
         for key in final_meetings.keys():
-            if any(final_meetings[other_key] >= final_meetings[key] and final_candidates[other_key] > final_candidates[
-                key] for other_key in final_meetings.keys() if other_key != key):
+            if any(
+                final_meetings[other_key] >= final_meetings[key]
+                and final_candidates[other_key] > final_candidates[key]
+                for other_key in final_meetings.keys()
+                if other_key != key
+            ):
                 keys_to_remove.add(key)
         for key in keys_to_remove:
             del final_meetings[key]
             del final_candidates[key]
-        final_swap = select_key(final_candidates, final_meetings, pareto_probs, random, demog_scores, demog_total)
+        final_swap = select_key(
+            final_candidates,
+            final_meetings,
+            pareto_probs,
+            random,
+            demog_scores,
+            demog_total,
+        )
         if final_swap == None:
             continue
 
@@ -792,36 +949,41 @@ def pareto_swaps(shuffled_pids,
                 swap_table = index
 
         temp_allocations_update[table_no] = [
-            final_swap if x == pid else x for x in temp_allocations_update[table_no]]
+            final_swap if x == pid else x
+            for x in temp_allocations_update[table_no]
+        ]
         temp_allocations_update[swap_table] = [
-            pid if x == final_swap else x for x in temp_allocations_update[swap_table]]
+            pid if x == final_swap else x
+            for x in temp_allocations_update[swap_table]
+        ]
 
         for index in [table_no, swap_table]:
             table_meeting_evaluations[index] = evaluate_meetings(
-                temp_allocations_update[index], previous_meetings)
+                temp_allocations_update[index], previous_meetings
+            )
             table_demog_evaluations[index] = {}
             table_demog_evaluations[index] = evaluate_demographics(
-                temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
-
+                temp_allocations_update,
+                index,
+                people,
+                cats_diverse,
+                m_data,
+                fields,
+                pareto_probs,
+            )
 
     return temp_allocations_update
 
 
-def select_key(pareto,
-               meet,
-               pareto_probs,
-               random,
-               demog_scores,
-               demog_total):
+def select_key(pareto, meet, pareto_probs, random, demog_scores, demog_total):
     relevant_demogs = []
 
     k = list(pareto.keys())[0]
-    for i in range (0, demog_total):
+    for i in range(0, demog_total):
         if demog_scores[k][i] == True:
-
-            relevant_demogs.append(pareto_probs[i+1])
+            relevant_demogs.append(pareto_probs[i + 1])
     if relevant_demogs != []:
-       pareto_prob_copy = max(relevant_demogs)
+        pareto_prob_copy = max(relevant_demogs)
     else:
         pareto_prob_copy = max(pareto_probs.values())
 
@@ -843,7 +1005,11 @@ def select_key(pareto,
             if rand_num <= prob:
                 return key
     else:
-        meet_copy = {key: value for key, value in meet_copy.items() if meet_copy[key] >= 0}
+        meet_copy = {
+            key: value
+            for key, value in meet_copy.items()
+            if meet_copy[key] >= 0
+        }
         if len(meet_copy) == 0:
             return None
         if len(meet_copy) == 1:
@@ -862,11 +1028,13 @@ def select_key(pareto,
                 return key
 
 
-def evaluate_swap(original_id,
-                  swap_id,
-                  allocations,
-                  table_meeting_evaluations,
-                  previous_meetings):
+def evaluate_swap(
+    original_id,
+    swap_id,
+    allocations,
+    table_meeting_evaluations,
+    previous_meetings,
+):
 
     for index, table in enumerate(allocations):
         if swap_id in table:
@@ -874,65 +1042,72 @@ def evaluate_swap(original_id,
         if original_id in table:
             table_no = index
 
-    original_meetings = sum(x for x in table_meeting_evaluations[table_no].values()) + sum(
-        x for x in table_meeting_evaluations[swap_table].values())
+    original_meetings = sum(
+        x for x in table_meeting_evaluations[table_no].values()
+    ) + sum(x for x in table_meeting_evaluations[swap_table].values())
     original_table = allocations[table_no]
     swap_table = allocations[swap_table]
-    original_table_2 = [swap_id if x == original_id else x for x in original_table]
+    original_table_2 = [
+        swap_id if x == original_id else x for x in original_table
+    ]
     swap_table_2 = [original_id if x == swap_id else x for x in swap_table]
     meetings_1 = evaluate_meetings(original_table_2, previous_meetings)
     meetings_2 = evaluate_meetings(swap_table_2, previous_meetings)
 
-    new_meetings = sum(x for x in meetings_1.values()) + sum(x for x in meetings_2.values())
+    new_meetings = sum(x for x in meetings_1.values()) + sum(
+        x for x in meetings_2.values()
+    )
 
     return original_meetings - new_meetings
 
 
-def generate_combinations(demogs,
-                          info):
+def generate_combinations(demogs, info):
     demographics = list(demogs.keys())
 
     combinations_count = {}
 
-    for values in product(*[demogs[demographic] + [info[demographic]] for demographic in demographics]):
+    for values in product(
+        *[
+            demogs[demographic] + [info[demographic]]
+            for demographic in demographics
+        ]
+    ):
         combination = tuple(values)
-        count = len(demogs) - \
-                sum(1 for v in combination if v in info.values())
+        count = len(demogs) - sum(1 for v in combination if v in info.values())
         combinations_count[combination] = count
     return combinations_count
 
 
-def evaluate_meetings(table,
-                      previous_meetings):
+def evaluate_meetings(table, previous_meetings):
 
     total_meetings = {}
     for i in range(len(table)):
         for j in range(i + 1, len(table)):
-            agent1, agent2 = min(table[i], table[j]), max(
-                table[i], table[j])
+            agent1, agent2 = min(table[i], table[j]), max(table[i], table[j])
             # Sum the values from pairs_dict for the pair of agents
             total_meetings[agent1] = total_meetings.get(
-                agent1, 0) + previous_meetings.get((agent1, agent2), 0)
+                agent1, 0
+            ) + previous_meetings.get((agent1, agent2), 0)
             total_meetings[agent2] = total_meetings.get(
-                agent2, 0) + previous_meetings.get((agent1, agent2), 0)
-    return (total_meetings)
+                agent2, 0
+            ) + previous_meetings.get((agent1, agent2), 0)
+    return total_meetings
 
 
-def evaluate_demographics(temp_allocations,
-                          table_no,
-                          people,
-                          cats_diverse,
-                          m_data,
-                          fields,
-                          pareto_probs):
+def evaluate_demographics(
+    temp_allocations,
+    table_no,
+    people,
+    cats_diverse,
+    m_data,
+    fields,
+    pareto_probs,
+):
     table = temp_allocations[table_no]
-
-
 
     table_data = {}
     for index in table:
         table_data[index] = people[index]
-
 
     ideal_balance = calculate_ideal_balance(cats_diverse, m_data, people)
 
@@ -943,7 +1118,6 @@ def evaluate_demographics(temp_allocations,
 
     i = 0
 
-
     for demog in cats_diverse:
         counts = [0] * len(cats_diverse[demog])
         for person in table_data.values():
@@ -952,54 +1126,69 @@ def evaluate_demographics(temp_allocations,
                     counts[i] += 1
         table_balance[demog] = [count / table_length for count in counts]
 
-        table_distances[demog] = sum([abs(x - y) for x, y in zip(
-            ideal_balance[demog], table_balance[demog])]) / len(ideal_balance[demog])
+        table_distances[demog] = sum(
+            [
+                abs(x - y)
+                for x, y in zip(ideal_balance[demog], table_balance[demog])
+            ]
+        ) / len(ideal_balance[demog])
 
-        table_actions[demog] = evaluate_actions(ideal_balance[demog], table_balance[demog], cats_diverse[demog],
-                                                len(table), fields, cats_diverse, pareto_probs)
-
+        table_actions[demog] = evaluate_actions(
+            ideal_balance[demog],
+            table_balance[demog],
+            cats_diverse[demog],
+            len(table),
+            fields,
+            cats_diverse,
+            pareto_probs,
+        )
 
     return table_distances, table_actions
 
 
-def evaluate_actions(ideal_dist,
-                     table_dist,
-                     cat_labels,
-                     table_size,
-                     fields,
-                     cats_diverse,
-                     pareto_probs):
+def evaluate_actions(
+    ideal_dist,
+    table_dist,
+    cat_labels,
+    table_size,
+    fields,
+    cats_diverse,
+    pareto_probs,
+):
     table_discrepancies = [y - x for y, x in zip(table_dist, ideal_dist)]
 
     actions = {}
 
-    #print(list(mydict.keys())[list(mydict.values()).index(16)])
-    #mydict.keys()[mydict.values().index(16)]
-    diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]]
+    # print(list(mydict.keys())[list(mydict.values()).index(16)])
+    # mydict.keys()[mydict.values().index(16)]
+    diversity_val = fields[
+        list(cats_diverse.keys())[
+            list(cats_diverse.values()).index(cat_labels)
+        ]
+    ]
 
-    lister = list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]
+    lister = list(cats_diverse.keys())[
+        list(cats_diverse.values()).index(cat_labels)
+    ]
 
-    #top_prob = max(pareto_probs)
+    # top_prob = max(pareto_probs)
     threshold = -0.5 + pareto_probs[lister]
-    #k = fields[cats_diverse[cat_labels]]
+    # k = fields[cats_diverse[cat_labels]]
     for index, label in enumerate(cat_labels):
         actions_for_label = []
         if table_dist[index] > ideal_dist[index]:
             for a, b in zip(table_discrepancies, cat_labels):
                 if diversity_val == FieldMode.Diversify and a < threshold:
-                       actions_for_label.append(b)
-                #elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
-                 #      actions_for_label.append(b)
-                #elif diversity_val == FieldMode.Diversify_3 and a < -0.7:
-                 #      actions_for_label.append(b)
+                    actions_for_label.append(b)
+                # elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
+                #      actions_for_label.append(b)
+                # elif diversity_val == FieldMode.Diversify_3 and a < -0.7:
+                #      actions_for_label.append(b)
         actions[label] = actions_for_label
 
-
-
-      #  for i in range (0,len(actions)):
-       #     if len(actions[i]) != 0:
-        #        for j in range (0,len(actions[i])):
-         #           actions[i][j] = math.ceil(actions[i][j] * 0.5)
-
+    #  for i in range (0,len(actions)):
+    #     if len(actions[i]) != 0:
+    #        for j in range (0,len(actions[i])):
+    #           actions[i][j] = math.ceil(actions[i][j] * 0.5)
 
     return actions
