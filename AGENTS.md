@@ -86,10 +86,6 @@ unique pairwise meetings.
 
 **Settings:** `n_attempts=100`, `seed=None`
 
-**⚠ Known bug:** References `FieldMode.Diversify_1`, `Diversify_2`,
-`Diversify_3` (student-introduced regression). These members do not exist
-in `FieldMode`; calling `Algorithm.Legacy` with any `Diversify` fields
-raises `AttributeError`. Fix: replace with `FieldMode.Diversify`.
 
 ### DREAM (`Algorithm.DREAM`)
 
@@ -103,8 +99,6 @@ priority stochastically. The `previous_meetings` dict persists across
 rounds so diversity/meeting optimisation is cumulative.
 
 **Settings:** `n_attempts=3`, `seed=None`
-
-**⚠ Known bug:** Same `FieldMode.Diversify_1/2/3` issue as Legacy.
 
 ### HERMES (`Algorithm.HERMES`) — recommended; default in groupselect-app
 
@@ -153,13 +147,11 @@ unique pairs).
 
 ## Known issues
 
-1. **Legacy + DREAM broken:** `FieldMode.Diversify_1/2/3` references
-   raise `AttributeError`. Replace with `FieldMode.Diversify` to fix.
-2. **`allocate_pandas.py:27`:** Stray `print("enough")` debug line.
-3. **`algorithm_hermes.py`:** Debug `print("6")` (line 171) and
-   `print(meet0, ...)` (line 324).
-4. **`FieldMode.Keep`:** Defined but not implemented in any algorithm.
-5. **`analysis/notebook.py`:** Uses outdated API names (`"heuristic"`,
-   `FieldMode.Diversify_1`).
-6. **`algorithm_legacy.py`:** Large commented-out blocks and
-   `Diversify_1/2/3` references are student-introduced regressions.
+1. **`allocate_pandas.py:27`:** Stray `print("enough")` debug line.
+2. **`algorithm_hermes.py`:** Debug `print("6")` (~line 185) and
+   `print(meet0, ...)` (~line 340).
+3. **`FieldMode.Keep`:** Defined but not implemented in any algorithm.
+4. **`analysis/notebook.py`:** Uses outdated API names (`"heuristic"`,
+   `FieldMode.Diversify`).
+5. **`algorithm_legacy.py`:** Large commented-out blocks are
+   student-introduced and can be cleaned up.

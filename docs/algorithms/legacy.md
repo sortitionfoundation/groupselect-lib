@@ -2,13 +2,6 @@
 
 `Algorithm.Legacy` — developed by P.C. Verpoort (2020).
 
-!!! warning "Known bug"
-    This algorithm currently references `FieldMode.Diversify_1`,
-    `Diversify_2`, and `Diversify_3`, which do not exist in the current
-    `FieldMode` enum. Calling it with any `Diversify` fields raises
-    `AttributeError`. This is a regression introduced during a later edit.
-    The fix is to replace these references with `FieldMode.Diversify`.
-
 ## How it works
 
 1. **Re-index field values** by frequency (most common value → index 0).

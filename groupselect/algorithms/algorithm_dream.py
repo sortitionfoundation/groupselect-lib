@@ -3,11 +3,6 @@
 Based on: J. Barrett and K. Gal, "DREAM: A Heuristic for Group Allocation
 in Deliberative Democracy Events", arXiv:2410.21451.
 
-.. warning::
-    This module contains the same ``FieldMode.Diversify_1/2/3`` regression
-    as the Legacy module.  Calling :func:`algorithm_dream` with any
-    ``Diversify`` fields raises ``AttributeError``.
-
 .. note::
     The ``pareto_prob`` parameter is hard-coded to ``0.5`` in the entry
     function.  Use :func:`algorithm_hermes` for user-configurable weights.
@@ -43,10 +38,6 @@ def algorithm_dream(
     seed: None | int = None,
 ):
     """Run the DREAM Pareto-swap group allocation.
-
-    .. warning::
-        Currently broken for ``FieldMode.Diversify`` fields.  See module
-        docstring.
 
     Algorithm (per allocation round):
         1. Random shuffle of participant indices.
@@ -84,9 +75,7 @@ def algorithm_dream(
     order_diverse = [
         k
         for k, v in fields.items()
-        if v == FieldMode.Diversify_1
-        or v == FieldMode.Diversify_2
-        or v == FieldMode.Diversify_3
+        if v == FieldMode.Diversify
     ]
 
     if len(order_cluster) >= 1:

@@ -1,13 +1,4 @@
-"""Legacy greedy group-allocation algorithm (Verpoort 2020).
-
-.. warning::
-    This module references ``FieldMode.Diversify_1``, ``Diversify_2``, and
-    ``Diversify_3``, which do not exist in the current :class:`FieldMode`
-    enum.  Calling :func:`algorithm_legacy` with any ``Diversify`` fields
-    raises ``AttributeError``.  This is a known regression introduced by a
-    later edit.  Fix: replace all ``FieldMode.Diversify_1/2/3`` occurrences
-    with ``FieldMode.Diversify``.
-"""
+"""Legacy greedy group-allocation algorithm (Verpoort 2020)."""
 
 from typing import Callable
 
@@ -33,10 +24,6 @@ def algorithm_legacy(
     seed: None | int = None,
 ) -> AllocatorResult:
     """Run the legacy greedy-restart group allocation.
-
-    .. warning::
-        Currently broken for ``FieldMode.Diversify`` fields due to
-        ``FieldMode.Diversify_1/2/3`` references.  See module docstring.
 
     Algorithm:
         1. Re-index field values by frequency (most common → 0).
@@ -77,9 +64,7 @@ def algorithm_legacy(
     order_diverse = [
         k
         for k, v in fields.items()
-        if v == FieldMode.Diversify_1
-        or v == FieldMode.Diversify_2
-        or v == FieldMode.Diversify_3
+        if v == FieldMode.Diversify
     ]
 
     lister = [None] * len(order_diverse)
@@ -113,7 +98,7 @@ def algorithm_legacy(
         raise Exception("Argument n_attempts must be positive integer.")
 
     # Check that there is at least one diversification field defined.
-    if FieldMode.Diversify_1 not in fields.values():
+    if FieldMode.Diversify not in fields.values():
         raise Exception(
             "Error: One diversification field required!",
             "You have to set at least one field that is "
@@ -173,7 +158,7 @@ def algorithm_legacy(
             # print(allocation)
             # print(participants)
 
-            # fields_diversify = [k for k, v in fields.items() if v == FieldMode.Diversify_1]
+            # fields_diversify = [k for k, v in fields.items() if v == FieldMode.Diversify]
 
             # groups_list = [
             #   g_id
@@ -324,7 +309,7 @@ def _allocate_legacy_once(
     # by clustering and diversification field values.
     fields_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
     fields_diversify = [
-        k for k, v in fields.items() if v == FieldMode.Diversify_1
+        k for k, v in fields.items() if v == FieldMode.Diversify
     ]
     p_ids_ordered = np.lexsort(
         participants[:, (fields_cluster + fields_diversify)[::-1]].T

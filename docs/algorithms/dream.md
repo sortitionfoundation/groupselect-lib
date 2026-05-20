@@ -5,11 +5,6 @@
 **Reference:** J. Barrett and K. Gal, "DREAM: A Heuristic for Group
 Allocation in Deliberative Democracy Events", arXiv:2410.21451.
 
-!!! warning "Known bug"
-    Like Legacy, this algorithm references `FieldMode.Diversify_1/2/3`
-    which do not exist. This is a regression and will raise `AttributeError`
-    when called with any `Diversify` fields.
-
 ## How it works
 
 DREAM processes allocation rounds sequentially, maintaining a

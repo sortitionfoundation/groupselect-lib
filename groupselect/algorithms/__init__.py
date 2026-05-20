@@ -9,12 +9,9 @@ class Algorithm(Enum):
 
     Attributes:
         Legacy: Greedy + random-restart (Verpoort 2020).  Fast but no
-            cross-round meeting awareness.  Currently has a known bug
-            with ``FieldMode.Diversify`` fields — see ``algorithm_legacy``
-            module for details.
+            cross-round meeting awareness.
         DREAM: Pareto-swap heuristic (Barrett & Gal 2024).  Processes
             rounds sequentially and maintains a running meeting count.
-            Currently shares the same bug as Legacy.
         HERMES: Extension of DREAM with per-field diversity weights
             (Cowie 2026).  Recommended for production use.
     """
