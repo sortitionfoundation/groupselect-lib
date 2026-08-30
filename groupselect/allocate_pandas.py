@@ -49,8 +49,8 @@ def allocate_pandas(participants: pd.DataFrame,
         participants_codes.columns.tolist().index(k): v
         for k, v in fields.items()
     }
-    settings_numpy = settings.copy()
-    if "pareto_probs" in settings:
+    settings_numpy = (settings or {}).copy()
+    if settings is not None and "pareto_probs" in settings:
         settings_numpy["pareto_probs"] = {
             participants_codes.columns.tolist().index(k): v
             for k, v in settings_numpy["pareto_probs"].items()
