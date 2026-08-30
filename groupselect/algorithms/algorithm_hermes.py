@@ -331,10 +331,9 @@ def pareto_swaps(shuffled_pids,
         candidate_profiles = generate_combinations(candidate_demogs, pid_info)
         candidate_swaps = {}
 
-        for k, v in cats_diverse.items():
-            demog_total = k
-
-        demog_scores = [[False] * (demog_total)] * m_data
+        # Per swap-candidate record of which diversity fields (keyed by
+        # their field ID) that specific swap would pareto-improve.
+        demog_scores: dict[int, set[int]] = {}
 
 
         for profile in candidate_profiles:
@@ -345,7 +344,7 @@ def pareto_swaps(shuffled_pids,
                 candidate_swap_tables = [
                     x for x in table_demog_evaluations if x != table_no]
             for candidate_table in candidate_swap_tables:
-                demog_pareto = [False] * (demog_total)
+                demog_pareto_fields = set()
                 pareto_score = 0
                 pareto_profile = table_demog_evaluations[candidate_table][1]
                 table_valid = True
@@ -353,7 +352,7 @@ def pareto_swaps(shuffled_pids,
 
                     if pid_info[demog] in pareto_profile[demog][profile[index]]:
                         pareto_score += 1
-                        demog_pareto[demog-1] = True
+                        demog_pareto_fields.add(demog)
 
                     elif pid_info[demog] != profile[index]:
                         table_valid = False
@@ -367,9 +366,7 @@ def pareto_swaps(shuffled_pids,
                                     candidate_swaps[swap_pid] = pareto_score + \
                                                                 candidate_profiles[profile]
 
-                                    for i in range(0, demog_total):
-                                        if demog_pareto[i - 1] == True:
-                                            demog_scores[swap_pid][i - 1] = True
+                                    demog_scores.setdefault(swap_pid, set()).update(demog_pareto_fields)
 
                     else:
                         for swap_pid in temp_allocations_update[candidate_table]:
@@ -383,9 +380,7 @@ def pareto_swaps(shuffled_pids,
                                         candidate_swaps[swap_pid] = pareto_score + \
                                                                     candidate_profiles[profile]
 
-                                        for i in range(0, demog_total):
-                                            if demog_pareto[i-1] == True:
-                                                demog_scores[swap_pid][i-1] = True
+                                        demog_scores.setdefault(swap_pid, set()).update(demog_pareto_fields)
 
 
         if len(candidate_swaps) == 0:
@@ -432,7 +427,7 @@ def pareto_swaps(shuffled_pids,
         for key in keys_to_remove:
             del final_meetings[key]
             del final_candidates[key]
-        final_swap = select_key(final_candidates, final_meetings, pareto_probs, random, demog_scores, demog_total)
+        final_swap = select_key(final_candidates, final_meetings, pareto_probs, random, demog_scores)
         if final_swap == None:
             continue
 
@@ -460,15 +455,13 @@ def select_key(pareto,
                meet,
                pareto_probs,
                random,
-               demog_scores,
-               demog_total):
-    relevant_demogs = []
-
+               demog_scores):
+    # Determine which diversity fields the chosen candidate swap actually
+    # pareto-improves, and use the highest configured probability among
+    # those fields (falling back to the overall maximum if the candidate
+    # improves no field, e.g. it was only accepted for its meeting score).
     k = list(pareto.keys())[0]
-    for i in range (0, demog_total):
-        if demog_scores[k][i] == True:
-
-            relevant_demogs.append(pareto_probs[i+1])
+    relevant_demogs = [pareto_probs[field_id] for field_id in demog_scores.get(k, ())]
     if relevant_demogs != []:
        pareto_prob_copy = max(relevant_demogs)
     else:
