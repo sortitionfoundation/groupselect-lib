@@ -32,7 +32,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run python -m pytest -v
+          uv run pytest -v
 
   # 2) Lint and formatting checks with ruff.
   lint:
