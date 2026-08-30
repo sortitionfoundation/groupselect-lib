@@ -1,14 +1,22 @@
 
-import copy
+import functools
 import math
-from itertools import product
 from typing import Callable
 
 import numpy as np
 
 
 from groupselect.field_mode import FieldMode
-from groupselect.allocation import Allocation, ParticipantGroup, AllocationEnsemble, AllocatorResult
+from groupselect.allocation import AllocatorResult
+from groupselect.algorithms.algorithm_dream import (
+    allocate,
+    run_round,
+    evaluate_demographics,
+    select_key,
+    evaluate_meetings,
+    generate_combinations,
+    evaluate_swap,
+)
 
 
 def algorithm_hermes(participants: np.ndarray[int],
@@ -104,190 +112,21 @@ def algorithm_hermes(participants: np.ndarray[int],
     if n_swap_loops < 1:
         raise Exception("Error: at least one round of meeting optimization must be specified (in *advanced settings*)")
 
-
-    allocation_results = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
+    # HERMES reuses DREAM's allocation scaffolding (allocate -> run_round)
+    # unchanged, overriding only the swap-selection step (pareto_swaps
+    # below) so each diversity field's swap-acceptance probability is
+    # weighed individually instead of using one fixed probability/threshold
+    # for every field.
+    allocation_results = allocate(
+        tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations,
+        cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents,
+        val_cluster, manuals, random,
+        run_round=functools.partial(run_round, pareto_swaps=pareto_swaps),
+    )
 
     final_results2 = max(allocation_results)
 
     return AllocatorResult(final_results2)
-
-def allocate(tables,
-             peopledata_vals_used,
-             order_cluster_dict,
-             order_diverse_dict,
-             m_data,
-             nallocations,
-             cluster_tables,
-             pareto_probs,
-             n_swap_loops,
-             progress_bar,
-             previous_meetings,
-             no_cluster_agents,
-             val_cluster,
-             manuals,
-             random,
-             fields):
-    n_rounds = nallocations
-
-    for i in range(m_data):
-        for j in range( i +1, m_data):
-            pair = (i ,j)
-            if pair not in previous_meetings:
-                previous_meetings[pair] = 0
-
-    allocation_attempts: list[AllocationEnsemble] = [
-        AllocationEnsemble()
-        for _ in range(1)
-    ]
-
-
-    for round_no in range(n_rounds):
-        if progress_bar: progress_bar(round_no +1)
-
-
-        if not(isinstance(tables, int)):
-            no_tables = tables[round_no]
-        else:
-            no_tables = tables
-
-        no_larger_tables = m_data % no_tables
-
-        seats = math.ceil(m_data / no_tables)
-
-        min_cluster_tables = math.ceil(no_cluster_agents /seats)
-
-        n_cluster_tables = min(min_cluster_tables + cluster_tables, tables)
-        no_smaller_tables = no_tables - no_larger_tables
-
-        if no_larger_tables == 0:
-            template = [[None for s in range(seats)] for r in range(no_smaller_tables)]
-        else:
-            template = [[None for s in range(seats)] for r in range(no_larger_tables)] + \
-                [[None for s in range(seats - 1)] for r in range(no_smaller_tables)]
-
-        allocation = run_round(template, n_swap_loops, seats, m_data, manuals, n_cluster_tables, order_cluster_dict,
-                               order_diverse_dict, peopledata_vals_used, val_cluster, no_tables, previous_meetings,
-                               pareto_probs, random, fields)
-
-        allocation = Allocation(
-            ParticipantGroup(p_id for p_id in group)
-            for group in allocation
-        )
-        for n, ensemble in enumerate(allocation_attempts):
-            ensemble.append(allocation)
-
-    return allocation_attempts
-
-
-def calculate_ideal_balance(cats_diverse,
-                            m_data,
-                            people):
-    ideal_balance = {}
-    for demog in cats_diverse:
-        counts = [0] * len(cats_diverse[demog])
-        for row in people:
-            for i, category in enumerate(cats_diverse[demog]):
-                if row[demog] == category:
-                    counts[i] += 1
-        ideal_balance[demog] = [count / m_data for count in counts]
-
-
-    return ideal_balance
-
-
-def run_round(template,
-              n_swap_loops,
-              seats,
-              m_data,
-              manual_pids,
-              n_cluster_tables,
-              cats_cluster,
-              cats_diverse,
-              people,
-              val_cluster,
-              no_tables,
-              previous_meetings,
-              pareto_probs,
-              random,
-              fields) -> Allocation:
-    allocations = copy.deepcopy(template)
-
-    all_pids = list(range(m_data))
-
-    shuffled_pids = all_pids.copy()
-
-    random.shuffle(shuffled_pids)
-
-    shuffled_pids = [x for x in shuffled_pids if x not in manual_pids]
-
-    cluster_table_index = list(range(n_cluster_tables))
-
-    if len(cats_cluster) == 1:
-        cluster_individuals = []
-        for index, person in enumerate(people):
-            if person[next(iter(cats_cluster))] == val_cluster:
-                cluster_individuals.append(index)
-        cluster_individuals = [x for x in cluster_individuals if x not in manual_pids]
-
-        chosen_chair = 0
-
-        total_clustering_spaces = sum(allocations[index].count(None) for index in cluster_table_index)
-
-        if len(cluster_individuals) > total_clustering_spaces:
-            raise ValueError("Too many manual allocations to clustering tables: please reduce manual allocations.")
-        for agent in cluster_individuals:
-            agent_assigned = 0
-            while (agent_assigned == 0):
-                table_no = chosen_chair % len(cluster_table_index)
-                seat_no = math.floor(
-                    chosen_chair / len(cluster_table_index) % seats)
-                if allocations[table_no][seat_no] is None:
-                    allocations[table_no][seat_no] = agent
-                    agent_assigned = 1
-                chosen_chair += 1
-    else:
-        cluster_individuals = []
-
-    non_cluster_individuals = [x for x in shuffled_pids if x not in cluster_individuals]
-    chosen_chair = 0
-
-    for agent in non_cluster_individuals:
-        agent_assigned = 0
-        while (agent_assigned == 0):
-            table_no = chosen_chair % no_tables
-            seat_no = math.floor(chosen_chair / no_tables % seats)
-            if allocations[table_no][seat_no] is None:
-                allocations[table_no][seat_no] = agent
-                agent_assigned = 1
-            chosen_chair += 1
-
-    if n_swap_loops == 1:
-        pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
-    else:
-        pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index, allocations, people,
-                                          cats_diverse, manual_pids, previous_meetings, m_data, pareto_probs, random, fields)
-        for swap_round in range(1, n_swap_loops):
-            pareto_allocations = pareto_swaps(shuffled_pids, cluster_individuals, cluster_table_index,
-                                              pareto_allocations, people, cats_diverse, manual_pids, previous_meetings,
-                                              m_data, pareto_probs, random, fields)
-
-    for sublist in pareto_allocations:
-
-        for i in range(len(sublist)):
-
-            for j in range(i + 1, len(sublist)):
-                pair = (min(sublist[i], sublist[j]),
-                        max(sublist[i], sublist[j]))
-
-                previous_meetings[pair] += 1
-
-    this_alloc = Allocation(
-        ParticipantGroup(list)
-        for list in pareto_allocations
-    )
-
-    return this_alloc
 
 
 def pareto_swaps(shuffled_pids,
@@ -300,18 +139,25 @@ def pareto_swaps(shuffled_pids,
                  previous_meetings,
                  m_data,
                  pareto_probs,
-                 random,
-                 fields):
+                 random):
+    # HERMES's per-field threshold: how far a table's demographic balance
+    # may deviate from the panel-wide ideal before a swap is considered for
+    # that field, controlled by the field's own pareto probability (DREAM
+    # uses a fixed threshold of 0 for every field instead). Keyed directly
+    # by the field's own ID -- earlier code instead reverse-looked-up the
+    # field from its category-value list, which silently resolved to the
+    # wrong field whenever two diversity fields shared an identical set of
+    # category values.
+    threshold_func = lambda demog: -0.5 + pareto_probs[demog]
+
     temp_allocations_update = temp_allocations.copy()
 
     table_meeting_evaluations = {}
     table_demog_evaluations = {}
     for index, table in enumerate(temp_allocations_update):
         table_meeting_evaluations[index] = evaluate_meetings(table, previous_meetings)
-        table_demog_evaluations[index] = {}
-
         table_demog_evaluations[index] = evaluate_demographics(
-            temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
+            temp_allocations_update, index, people, cats_diverse, m_data, threshold_func=threshold_func)
 
 
     for pid in shuffled_pids:
@@ -427,7 +273,16 @@ def pareto_swaps(shuffled_pids,
         for key in keys_to_remove:
             del final_meetings[key]
             del final_candidates[key]
-        final_swap = select_key(final_candidates, final_meetings, pareto_probs, random, demog_scores)
+
+        # Use the highest configured probability among the diversity
+        # fields the chosen candidate actually pareto-improves (falling
+        # back to the overall maximum if it improves none, e.g. it was
+        # accepted purely for its meeting-uniqueness score).
+        def pareto_prob_for(k):
+            relevant = [pareto_probs[field_id] for field_id in demog_scores.get(k, ())]
+            return max(relevant) if relevant else max(pareto_probs.values())
+
+        final_swap = select_key(final_candidates, final_meetings, pareto_prob_for, random)
         if final_swap == None:
             continue
 
@@ -443,184 +298,8 @@ def pareto_swaps(shuffled_pids,
         for index in [table_no, swap_table]:
             table_meeting_evaluations[index] = evaluate_meetings(
                 temp_allocations_update[index], previous_meetings)
-            table_demog_evaluations[index] = {}
             table_demog_evaluations[index] = evaluate_demographics(
-                temp_allocations_update, index, people, cats_diverse, m_data, fields, pareto_probs)
+                temp_allocations_update, index, people, cats_diverse, m_data, threshold_func=threshold_func)
 
 
     return temp_allocations_update
-
-
-def select_key(pareto,
-               meet,
-               pareto_probs,
-               random,
-               demog_scores):
-    # Determine which diversity fields the chosen candidate swap actually
-    # pareto-improves, and use the highest configured probability among
-    # those fields (falling back to the overall maximum if the candidate
-    # improves no field, e.g. it was only accepted for its meeting score).
-    k = list(pareto.keys())[0]
-    relevant_demogs = [pareto_probs[field_id] for field_id in demog_scores.get(k, ())]
-    if relevant_demogs != []:
-       pareto_prob_copy = max(relevant_demogs)
-    else:
-        pareto_prob_copy = max(pareto_probs.values())
-
-    pareto_copy = pareto.copy()
-    meet_copy = meet.copy()
-    total_a = sum(pareto_copy.values())
-    if random.random() < pareto_prob_copy:
-        if len(pareto_copy) == 1:
-            return next(iter(pareto_copy.keys()))
-
-        cumulative_prob_a = {}
-        cumulative_sum = 0
-        for key, value in pareto_copy.items():
-            cumulative_sum += value / total_a
-            cumulative_prob_a[key] = cumulative_sum
-
-        rand_num = random.random()
-        for key, prob in cumulative_prob_a.items():
-            if rand_num <= prob:
-                return key
-    else:
-        meet_copy = {key: value for key, value in meet_copy.items() if meet_copy[key] >= 0}
-        if len(meet_copy) == 0:
-            return None
-        if len(meet_copy) == 1:
-            return next(iter(meet_copy.keys()))
-
-        total_b = sum(meet_copy.values())
-        cumulative_prob_b = {}
-        cumulative_sum = 0
-        for key, value in meet_copy.items():
-            cumulative_sum += value / total_b
-            cumulative_prob_b[key] = cumulative_sum
-        rand_num = random.random()
-
-        for key, prob in cumulative_prob_b.items():
-            if rand_num <= prob:
-                return key
-
-
-def evaluate_swap(original_id,
-                  swap_id,
-                  allocations,
-                  table_meeting_evaluations,
-                  previous_meetings):
-
-    for index, table in enumerate(allocations):
-        if swap_id in table:
-            swap_table = index
-        if original_id in table:
-            table_no = index
-
-    original_meetings = sum(x for x in table_meeting_evaluations[table_no].values()) + sum(
-        x for x in table_meeting_evaluations[swap_table].values())
-    original_table = allocations[table_no]
-    swap_table = allocations[swap_table]
-    original_table_2 = [swap_id if x == original_id else x for x in original_table]
-    swap_table_2 = [original_id if x == swap_id else x for x in swap_table]
-    meetings_1 = evaluate_meetings(original_table_2, previous_meetings)
-    meetings_2 = evaluate_meetings(swap_table_2, previous_meetings)
-
-    new_meetings = sum(x for x in meetings_1.values()) + sum(x for x in meetings_2.values())
-
-    return original_meetings - new_meetings
-
-
-def generate_combinations(demogs,
-                          info):
-    demographics = list(demogs.keys())
-
-    combinations_count = {}
-
-    for values in product(*[demogs[demographic] + [info[demographic]] for demographic in demographics]):
-        combination = tuple(values)
-        count = len(demogs) - \
-                sum(1 for v in combination if v in info.values())
-        combinations_count[combination] = count
-    return combinations_count
-
-
-def evaluate_meetings(table,
-                      previous_meetings):
-
-    total_meetings = {}
-    for i in range(len(table)):
-        for j in range(i + 1, len(table)):
-            agent1, agent2 = min(table[i], table[j]), max(
-                table[i], table[j])
-            # Sum the values from pairs_dict for the pair of agents
-            total_meetings[agent1] = total_meetings.get(
-                agent1, 0) + previous_meetings.get((agent1, agent2), 0)
-            total_meetings[agent2] = total_meetings.get(
-                agent2, 0) + previous_meetings.get((agent1, agent2), 0)
-    return (total_meetings)
-
-
-def evaluate_demographics(temp_allocations,
-                          table_no,
-                          people,
-                          cats_diverse,
-                          m_data,
-                          fields,
-                          pareto_probs):
-    table = temp_allocations[table_no]
-
-
-
-    table_data = {}
-    for index in table:
-        table_data[index] = people[index]
-
-
-    ideal_balance = calculate_ideal_balance(cats_diverse, m_data, people)
-
-    table_balance = {}
-    table_actions = {}
-    table_distances = {}
-    table_length = len(table)
-
-    for demog in cats_diverse:
-        counts = [0] * len(cats_diverse[demog])
-        for person in table_data.values():
-            for i, category in enumerate(cats_diverse[demog]):
-                if person.get(demog) == category:
-                    counts[i] += 1
-        table_balance[demog] = [count / table_length for count in counts]
-
-        table_distances[demog] = sum([abs(x - y) for x, y in zip(
-            ideal_balance[demog], table_balance[demog])]) / len(ideal_balance[demog])
-
-        table_actions[demog] = evaluate_actions(ideal_balance[demog], table_balance[demog], cats_diverse[demog],
-                                                len(table), fields, cats_diverse, pareto_probs)
-
-
-    return table_distances, table_actions
-
-
-def evaluate_actions(ideal_dist,
-                     table_dist,
-                     cat_labels,
-                     table_size,
-                     fields,
-                     cats_diverse,
-                     pareto_probs):
-    table_discrepancies = [y - x for y, x in zip(table_dist, ideal_dist)]
-
-    actions = {}
-
-    lister = list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]
-
-    threshold = -0.5 + pareto_probs[lister]
-    for index, label in enumerate(cat_labels):
-        actions_for_label = []
-        if table_dist[index] > ideal_dist[index]:
-            for a, b in zip(table_discrepancies, cat_labels):
-                if a < threshold:
-                    actions_for_label.append(b)
-        actions[label] = actions_for_label
-
-    return actions
