@@ -27,7 +27,7 @@ def algorithm_dream(participants: np.ndarray[int],
         seats = value
 
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
-    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify_1 or v == FieldMode.Diversify_2 or v == FieldMode.Diversify_3]
+    order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
 
 
     if len(order_cluster ) >=1:
@@ -62,15 +62,6 @@ def algorithm_dream(participants: np.ndarray[int],
 
     pareto_prob = 0.5
 
-
-    '''
-    cluster_tables: int,
-    m_data: int,
-    pareto_prob: float,
-    swap_rounds: int,
-
-    progress_bar: any == None'''
-
     seats = math.ceil(m_data /tables)
     previous_meetings = {}
 
@@ -82,17 +73,11 @@ def algorithm_dream(participants: np.ndarray[int],
     if (nallocations < 1):
         raise Exception("Error: Wrong allocation number!", "The number of computed allocations must at least be 1!")
 
-    # if len(tables)>1: do this bit
-
     peopledata_vals_used = [{} for i in range(m_data)]
 
     for i in range(m_data):
         for j in order_cluster + order_diverse:
             peopledata_vals_used[i][j] = int(participants[i][j])
-
-    # order_cluster_dict = get_field_cluster_dict()
-    # order_diverse_dict = get_field_diverse_dict()
-
 
     if not order_diverse_dict:
         raise Exception("Error: One diversification field required!", "You have to set at least one field that is used to diversify people across groups.")
@@ -115,49 +100,8 @@ def algorithm_dream(participants: np.ndarray[int],
     n_results = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_prob, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random)
 
     allocation_results = n_results
-    ''' allocations = []
-    for result in n_results[0]:
-        allocations.append(n_results[0][result])
-
-    allocation_group_outcome = allocations
-
-    d_mult = m_data// (tables**2)
-    L_R = ((tables**2) * 8.5 * d_mult * (d_mult-1)) + d_mult * (m_data % (tables**2))
-    min_duplicates = max(0, L_R)
-
-    optimal_pairs = 0
-    for table in allocations[0]:
-        n = len(table)
-        optimal_pairs += n * (n - 1) // 2
-
-    total_possible_pairs = 0
-    for round_no in range(nallocations):
-        if round_no == 0:
-            # no restrictions on repeating pairs
-            total_possible_pairs += optimal_pairs
-        else:
-            total_possible_pairs += optimal_pairs - min_duplicates
-    # calculate total pairs in sample
-    total_pairs = m_data * (m_data - 1) // 2
-
-    if 0 in n_results[1][nallocations - 1]:
-        allocation_group_links_pp = (total_pairs - n_results[2][nallocations - 1][0]) / m_data
-    else:
-        # all pairs have met
-        allocation_group_links_pp = total_pairs
-
-    # maximum links from round 0 to 1 are a function of table size and number of tables
-    allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
-
-    '''
 
     # Select the sample with maximum number of meetings.
-    # final_results1: list[AllocationEnsemble] = [
-    #   AllocationEnsemble()
-    #  for _ in range(1)
-    # ]
-
-
     final_results2 = max(allocation_results)
 
     return AllocatorResult(final_results2)
@@ -178,13 +122,6 @@ def allocate(tables,
              manuals,
              random):
     n_rounds = nallocations
-    pre_meeting_dist = {}
-    post_meeting_dist = {}
-    new_meetings_in_round = {}
-    pre_balance = {}
-    post_balance = {}
-
-    allocations_list = {}
 
     for i in range(m_data):
         for j in range( i +1, m_data):
@@ -192,7 +129,6 @@ def allocate(tables,
             if pair not in previous_meetings:
                 previous_meetings[pair] = 0
 
-    # allocation_attempts : AllocationEnsemble = AllocationEnsemble()
     allocation_attempts: list[AllocationEnsemble] = [
         AllocationEnsemble()
         for _ in range(1)
@@ -223,9 +159,6 @@ def allocate(tables,
             template = [[None for s in range(seats)] for r in range(no_larger_tables)] + \
                 [[None for s in range(seats - 1)] for r in range(no_smaller_tables)]
 
-        meetings_previous_round = previous_meetings.copy()
-
-        '''round_assign_pre, round_assign_swap, meetings_pre, '''
         allocation = run_round(template, n_swap_loops, seats, m_data, manuals, n_cluster_tables, order_cluster_dict,
                                order_diverse_dict, peopledata_vals_used, val_cluster, no_tables, previous_meetings,
                                pareto_prob, random)
@@ -236,40 +169,6 @@ def allocate(tables,
         )
         for n, ensemble in enumerate(allocation_attempts):
             ensemble.append(allocation)
-
-        '''pre_occurences = {}
-        for value in meetings_pre.values():
-           pre_occurences[value] = pre_occurences.get(value, 0) + 1
-        pre_meeting_dist[round_no] = pre_occurences
-        occurences = {}
-        for value in previous_meetings.values():
-            occurences[value] = occurences.get(value, 0) + 1
-        post_meeting_dist[round_no] = occurences
-
-        new_meetings = {}
-        for pair in previous_meetings:
-            if previous_meetings[pair]-meetings_previous_round[pair] == 1:
-               new_meetings[pair] = previous_meetings[pair]
-        round_meetings = {}
-        for value in new_meetings.values():
-            round_meetings[value] = round_meetings.get(value, 0) + 1
-        new_meetings_in_round[round_no] = round_meetings
-
-        pre_demog_evaluations = {}
-        for index, table in enumerate(round_assign_pre):
-            pre_demog_evaluations[index] = {}
-            pre_demog_evaluations[index] = evaluate_demographics(round_assign_pre, index, peopledata_vals_used, order_diverse_dict, m_data)[0]
-        pre_balance[round_no] = averages_from_evals(pre_demog_evaluations)
-        post_demog_evaluations = {}
-        for index, table in enumerate(round_assign_swap):
-            post_demog_evaluations[index] = {}
-            post_demog_evaluations[index] = evaluate_demographics(round_assign_swap, index, peopledata_vals_used, order_diverse_dict, m_data)[0]
-        post_balance[round_no] = averages_from_evals(post_demog_evaluations)
-
-        allocations_list[round_no] = round_assign_swap
-
-        allocations_list, pre_meeting_dist, post_meeting_dist, new_meetings_in_round, pre_balance, post_balance, 
-        '''
 
     return allocation_attempts
 
@@ -290,21 +189,6 @@ def calculate_ideal_balance(cats_diverse,
         ideal_balance[demog] = [count / m_data for count in counts]
 
     return ideal_balance
-
-
-def averages_from_evals(evaluations: dict):
-    values_per_key = {}
-
-    for nested_dict in evaluations.values():
-        for key, value in nested_dict.items():
-            if key not in values_per_key:
-                values_per_key[key] = []
-            values_per_key[key].append(value)
-    averages = {}
-    for key in values_per_key:
-        lst = values_per_key[key]
-        averages[key] = sum(lst) / len(lst)
-    return averages
 
 
 def run_round(template,
@@ -384,8 +268,6 @@ def run_round(template,
                                               pareto_allocations, people, cats_diverse, manual_pids, previous_meetings,
                                               m_data, pareto_prob, random)
 
-    raw_meetings = previous_meetings.copy()
-
     for sublist in pareto_allocations:
 
         for i in range(len(sublist)):
@@ -396,20 +278,10 @@ def run_round(template,
 
                 previous_meetings[pair] += 1
 
-    for sublist in allocations:
-        for i in range(len(sublist)):
-            for j in range(i + 1, len(sublist)):
-                pair = (min(sublist[i], sublist[j]),
-                        max(sublist[i], sublist[j]))
-                # Increment count for the pair in the dictionary
-                raw_meetings[pair] += 1
-
     this_alloc = Allocation(
         ParticipantGroup(list)
         for list in pareto_allocations
     )
-
-    '''allocations, pareto_allocations, raw_meetings, '''
 
     return this_alloc
 
@@ -706,5 +578,3 @@ def evaluate_actions(ideal_dist,
                     actions_for_label.append(b)
         actions[label] = actions_for_label
     return actions
-
-

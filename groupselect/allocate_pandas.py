@@ -7,9 +7,9 @@ from groupselect import FieldMode, Algorithm, allocate_numpy, AllocatorResult
 try:
     import pandas as pd
 except ImportError:
-    ImportError('Package `pandas` needs to be installed in order to use the '
-                'allocate_pandas module. Please first install `pandas` via '
-                'pip or similar.')
+    raise ImportError('Package `pandas` needs to be installed in order to use '
+                      'the allocate_pandas module. Please first install '
+                      '`pandas` via pip or similar.')
 
 
 def allocate_pandas(participants: pd.DataFrame,
@@ -21,7 +21,6 @@ def allocate_pandas(participants: pd.DataFrame,
                     settings: None | dict = None,
                     return_full: bool = False) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame, AllocatorResult]:
     # Check that the dataframe index is unique.
-    print("enough")
     if not participants.index.is_unique:
         raise Exception('Index of dataframe must be unique.')
 

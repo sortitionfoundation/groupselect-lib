@@ -1,10 +1,8 @@
 
 import copy
 import math
-import statistics
 from itertools import product
 from typing import Callable
-import csv
 
 import numpy as np
 
@@ -38,14 +36,8 @@ def algorithm_hermes(participants: np.ndarray[int],
         tables = value[0]
         seats = value
 
-
-
-
-
     order_cluster = [k for k, v in fields.items() if v == FieldMode.Cluster]
     order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
-
-
 
     X = participants[:, order_cluster]
 
@@ -54,20 +46,12 @@ def algorithm_hermes(participants: np.ndarray[int],
     Y = participants[:, order_diverse]
     lister = [None] * len(order_diverse)
 
-
     for i in range(0, len(order_diverse)):
-
 
         lister[i] = [int(item[i]) for item in Y]
 
         lister[i] = np.unique(lister[i])
         lister[i] = lister[i].tolist()
-
-
-
-
-
-    Y = np.unique(Y)
 
     if len(order_cluster ) >=1:
         val_cluster = X[len(X)-1]
@@ -85,14 +69,6 @@ def algorithm_hermes(participants: np.ndarray[int],
 
     m_data = participants.shape[0]
 
-    '''
-    cluster_tables: int,
-    m_data: int,
-    pareto_prob: float,
-    swap_rounds: int,
-
-    progress_bar: any == None'''
-
     seats = math.ceil(m_data /tables)
     previous_meetings = {}
     try:
@@ -103,17 +79,11 @@ def algorithm_hermes(participants: np.ndarray[int],
     if (nallocations < 1):
         raise Exception("Error: Wrong allocation number!", "The number of computed allocations must at least be 1!")
 
-    # if len(tables)>1: do this bit
-
     peopledata_vals_used = [{} for i in range(m_data)]
 
     for i in range(m_data):
         for j in order_cluster + order_diverse:
             peopledata_vals_used[i][j] = int(participants[i][j])
-
-    # order_cluster_dict = get_field_cluster_dict()
-    # order_diverse_dict = get_field_diverse_dict()
-
 
     if not order_diverse_dict:
         raise Exception("Error: One diversification field required!", "You have to set at least one field that is used to diversify people across groups.")
@@ -135,172 +105,10 @@ def algorithm_hermes(participants: np.ndarray[int],
         raise Exception("Error: at least one round of meeting optimization must be specified (in *advanced settings*)")
 
 
-    n_results, meet0, meet1, meet2, meet3, meet4, meet5 = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
+    allocation_results = allocate(tables, peopledata_vals_used, order_cluster_dict, order_diverse_dict, m_data, nallocations, cluster_tables, pareto_probs, n_swap_loops, progress_bar, previous_meetings, no_cluster_agents, val_cluster, manuals, random, fields)
 
-
-    allocation_results = n_results
-    #print(meet1)
-    #meetval = (meet1[9]+(meet2[9]/2)+meet3[9]/3 +meet4[9]/4+meet5[9]/5)/ (meet0[9]+meet1[9]+meet2[9]+meet3[9]+meet4[9]+meet5[9])
-    #print(meetval)
-    allocations = []
-    #for result in n_results[0]:
-     #   allocations.append(n_results[0][result])
-    print("6")
-    #allocation_group_outcome = allocations
-    '''
-    d_mult = m_data// (tables**2)
-    L_R = ((tables**2) * 8.5 * d_mult * (d_mult-1)) + d_mult * (m_data % (tables**2))
-    min_duplicates = max(0, L_R)
-
-    optimal_pairs = 0
-    for table in allocations[0]:
-        n = len(table)
-        optimal_pairs += n * (n - 1) // 2
-
-    total_possible_pairs = 0
-    for round_no in range(nallocations):
-        if round_no == 0:
-            # no restrictions on repeating pairs
-            total_possible_pairs += optimal_pairs
-        else:
-            total_possible_pairs += optimal_pairs - min_duplicates
-    # calculate total pairs in sample
-    total_pairs = m_data * (m_data - 1) // 2
-
-    if 0 in n_results[1][nallocations - 1]:
-        allocation_group_links_pp = (total_pairs - n_results[2][nallocations - 1][0]) / m_data
-    else:
-        # all pairs have met
-        allocation_group_links_pp = total_pairs
-    '''
-    # maximum links from round 0 to 1 are a function of table size and number of tables
-    #allocation_group_links_pp_max = min(total_pairs, total_possible_pairs) / m_data
-
-
-
-    # Select the sample with maximum number of meetings.
-    # final_results1: list[AllocationEnsemble] = [
-    #   AllocationEnsemble()
-    #  for _ in range(1)
-    # ]
-    distance = {}
-
-    #for i in range (0, tables):
-     #   distance[i] = evaluate_demographics(i, peopledata_vals_used, order_diverse_dict, m_data, fields)
-
-    #distances = evaluate_demographics()
-    #print(distances, "di
-
-    final = [0] * nallocations
-    div_mean = [0] * nallocations
-    minimum = [0] * nallocations
-    maximum = [0] * nallocations
     final_results2 = max(allocation_results)
-    """
-    if val_cluster == '':
-        it = 8
-    else :
-        it = 7
-    for j in range(nallocations):
 
-        for i in range (0, tables):
-            distance[i] = evaluate_demographics(allocation_results[0][j], i, peopledata_vals_used, order_diverse_dict, m_data, fields, pareto_probs)
-
-        this = [y for x,y in distance.items()]
-        this2 = [x for x,y in this]
-        this3 = [x[it] for x in this2]
-        #this4 = [x[7] for x in this2]
-        #this5 = [x[6] for x in this2]
-       # print("mu")
-        #for i in range (0, len(distance)):
-        #if (j == 983):
-            #print(this3, "this3")
-      #  print("phi")
-        #final3 = statistics.mean(this3)
-        #final4 = statistics.mean(this4)
-        #final5 = statistics.mean(this5)
-        #final[j] = statistics.mean([final3, final4, final5])
-        final[j] = statistics.mean(this3)
-        #maximum[j] = max(this3)
-        #minimum[j] = min(this3)
-        #print(final[0:j+1])
-       # print("omega")
-        div_mean[j] = statistics.mean(final[0:j+1])
-
-        #print(final[j])
-        #print(maximum[j])
-        #print(minimum[j])
-    #meet_mean = statistics.mean(prev_meet_mean)
-    #print("delta")
-    #if pareto_prob == 0.275:
-    #    rank = 2
-    #elif pareto_prob == 0.5:
-    #    rank = 1
-    #else:
-     #   rank = 3
-    print(prob1)
-    if pareto_prob[0] == 0.5:
-      if nallocations == 10:
-        name = "dreamgenraceage"
-      if nallocations == 11:
-        name = "dreamurbdietedu"
-      if nallocations == 12:
-        name = "dreamphotoaudioage"
-      if nallocations == 13:
-        name = "dreamracedietphoto"
-      if nallocations == 14:
-        name = "dreamageeduaudio"
-      if nallocations == 15:
-        name = "dreamgendietage"
-      if nallocations == 16:
-        name = "dreamraceeduaudio"
-      if nallocations == 17:
-        name = "dreamageurbphoto"
-    if pareto_prob[0] == 0.25:
-        if nallocations == 10:
-            name = "heurgenraceage"
-        if nallocations == 11:
-            name = "heururbdietedu"
-        if nallocations == 12:
-            name = "heurphotoaudioage"
-        if nallocations == 13:
-            name = "heurracedietphoto"
-        if nallocations == 14:
-            name = "heurageeduaudio"
-        if nallocations == 15:
-            name = "heurgendietage"
-        if nallocations == 16:
-            name = "heurraceeduaudio"
-        if nallocations == 17:
-            name = "heurageurbphoto"
-    if pareto_prob[0] != pareto_prob[1]:
-        if nallocations == 10:
-            name = "spreadgenraceage"
-        if nallocations == 11:
-            name = "spreadurbdietedu"
-        if nallocations == 12:
-            name = "spreadphotoaudioage"
-        if nallocations == 13:
-            name = "spreadracedietphoto"
-        if nallocations == 14:
-            name = "spreadageeduaudio"
-        if nallocations == 15:
-            name = "spreadgendietage"
-        if nallocations == 16:
-            name = "spreadraceeduaudio"
-        if nallocations == 17:
-            name = "spreadageurbphoto"
-
-    #filename = ('mutli cats, rank =' + rank.__str__() + ')' + name + '.csv')
-    filename = (name + ".csv")
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["round div_mean","total_div_mean", "meet0", "meet1", "meet2", "meet3"])
-        for j in range(0, 10):
-           # writer.writerow([1,2,3,4])
-            writer.writerow([final[j], div_mean[j], meet0[j], meet1[j], meet2[j], meet3[j], meetval])
-    """
-    print(meet0, meet1, meet2, meet3, meet4, meet5, "meetsdud")
     return AllocatorResult(final_results2)
 
 def allocate(tables,
@@ -321,37 +129,12 @@ def allocate(tables,
              fields):
     n_rounds = nallocations
 
-    previous_meetings_max = [0] * nallocations
-    previous_meetings_min = [0] * nallocations
-    round_meetings_mean = [0] * nallocations
-    total_meetings_mean = [0] * nallocations
-
-    meet0 = [0] * nallocations
-    meet1 = [0] * nallocations
-    meet2 = [0] * nallocations
-    meet3 = [0] * nallocations
-    meet4 = [0] * nallocations
-    meet5 = [0] * nallocations
-    meet6 = [0] * nallocations
-    meet7 = [0] * nallocations
-    meet8 = [0] * nallocations
-    meet9 = [0] * nallocations
-    meet10 = [0] * nallocations
-    pre_meeting_dist = {}
-    post_meeting_dist = {}
-    new_meetings_in_round = {}
-    pre_balance = {}
-    post_balance = {}
-
-    allocations_list = {}
-
     for i in range(m_data):
         for j in range( i +1, m_data):
             pair = (i ,j)
             if pair not in previous_meetings:
                 previous_meetings[pair] = 0
 
-    # allocation_attempts : AllocationEnsemble = AllocationEnsemble()
     allocation_attempts: list[AllocationEnsemble] = [
         AllocationEnsemble()
         for _ in range(1)
@@ -382,9 +165,6 @@ def allocate(tables,
             template = [[None for s in range(seats)] for r in range(no_larger_tables)] + \
                 [[None for s in range(seats - 1)] for r in range(no_smaller_tables)]
 
-        meetings_previous_round = previous_meetings.copy()
-
-        '''round_assign_pre, round_assign_swap, meetings_pre, '''
         allocation = run_round(template, n_swap_loops, seats, m_data, manuals, n_cluster_tables, order_cluster_dict,
                                order_diverse_dict, peopledata_vals_used, val_cluster, no_tables, previous_meetings,
                                pareto_probs, random, fields)
@@ -396,100 +176,7 @@ def allocate(tables,
         for n, ensemble in enumerate(allocation_attempts):
             ensemble.append(allocation)
 
-        '''pre_occurences = {}
-        for value in meetings_pre.values():
-           pre_occurences[value] = pre_occurences.get(value, 0) + 1
-        pre_meeting_dist[round_no] = pre_occurences
-        occurences = {}
-        for value in previous_meetings.values():
-            occurences[value] = occurences.get(value, 0) + 1
-        post_meeting_dist[round_no] = occurences
-
-        new_meetings = {}
-        for pair in previous_meetings:
-            if previous_meetings[pair]-meetings_previous_round[pair] == 1:
-               new_meetings[pair] = previous_meetings[pair]
-        round_meetings = {}
-        for value in new_meetings.values():
-            round_meetings[value] = round_meetings.get(value, 0) + 1
-        new_meetings_in_round[round_no] = round_meetings
-
-        pre_demog_evaluations = {}
-        for index, table in enumerate(round_assign_pre):
-            pre_demog_evaluations[index] = {}
-            pre_demog_evaluations[index] = evaluate_demographics(round_assign_pre, index, peopledata_vals_used, order_diverse_dict, m_data)[0]
-        pre_balance[round_no] = averages_from_evals(pre_demog_evaluations)
-        post_demog_evaluations = {}
-        for index, table in enumerate(round_assign_swap):
-            post_demog_evaluations[index] = {}
-            post_demog_evaluations[index] = evaluate_demographics(round_assign_swap, index, peopledata_vals_used, order_diverse_dict, m_data)[0]
-        post_balance[round_no] = averages_from_evals(post_demog_evaluations)
-
-        allocations_list[round_no] = round_assign_swap
-
-        allocations_list, pre_meeting_dist, post_meeting_dist, new_meetings_in_round, pre_balance, post_balance, 
-        '''
-
-       # print(allocation)
-       # print(previous_meetings)
-
-        values = [0] * 5
-
-        #for key, value in previous_meetings.items():
-        #    i = 0
-        #    print("issue")
-        #    for table in allocation:
-        #
-        #        print(i)
-        #        for pid in table:
-        #            if pid in key:
-        #                print(key)
-        #                values[i] = values[i] + value
-        #        i = i + 1
-        #print(values, "values")
-
-
-       #for table in allocation:
-        #    for pid in table:
-         #       pid_meets = (pid in x for x in previous_meetings.keys())
-          #      print(pid_meets)
-           #     break
-            #break
-
-        print(previous_meetings, "meeter1")
-        meet0[round_no] = sum(x == 0 for x in previous_meetings.values())
-        meet1[round_no] = sum(x == 1 for x in previous_meetings.values())
-        meet2[round_no] = sum(x == 2 for x in previous_meetings.values())
-        meet3[round_no] = sum(x == 3 for x in previous_meetings.values())
-        meet4[round_no] = sum(x == 4 for x in previous_meetings.values())
-        meet5[round_no] = sum(x == 5 for x in previous_meetings.values())
-        #meet6[round_no] = sum(x == 6 for x in previous_meetings.values())
-        #meet7[round_no] = sum(x == 7 for x in previous_meetings.values())
-        #meet8[round_no] = sum(x == 8 for x in previous_meetings.values())
-        #meet9[round_no] = sum(x == 9 for x in previous_meetings.values())
-        #meet10[round_no] = sum(x == 10 for x in previous_meetings.values())
-
-        #previous_meetings_max[round_no] = max(previous_meetings.values())
-        #previous_meetings_min[round_no] = min(previous_meetings.values())
-        #round_meetings_mean[round_no] = statistics.mean(previous_meetings.values())
-        #print(round_meetings_mean[0:round_no+1])
-        #print(statistics.mean(round_meetings_mean[0:round_no+1]))
-        #total_meetings_mean[round_no] = statistics.mean(round_meetings_mean[0:round_no+1])
-
-    #print(round_meetings_mean)
-   # if pareto_prob == 0.3:
-   #     filename = '10alloc2.csv'
-   # elif pareto_prob == 0.5:
-   #     filename = '10alloc.csv'
-   # else:
-   #     filename = '10alloc3.csv'
-
-   # with open(filename, 'w', newline='') as csvfile:
-   #     writer = csv.writer(csvfile)
-   #     writer.writerow(['round_no', 'meet0', 'meet1', 'meet2', 'meet3', 'meet4', 'meet5', 'meet6', 'meet7', 'meet8', 'meet9', 'meet10'])
-   #     for i in range(n_rounds):
-   #         writer.writerow([i, meet0[i], meet1[i], meet2[i], meet3[i], meet4[i], meet5[i], meet6[i], meet7[i], meet8[i], meet9[i], meet10[i]])
-    return allocation_attempts, meet0, meet1, meet2, meet3, meet4, meet5
+    return allocation_attempts
 
 
 def calculate_ideal_balance(cats_diverse,
@@ -506,21 +193,6 @@ def calculate_ideal_balance(cats_diverse,
 
 
     return ideal_balance
-
-
-def averages_from_evals(evaluations: dict):
-    values_per_key = {}
-
-    for nested_dict in evaluations.values():
-        for key, value in nested_dict.items():
-            if key not in values_per_key:
-                values_per_key[key] = []
-            values_per_key[key].append(value)
-    averages = {}
-    for key in values_per_key:
-        lst = values_per_key[key]
-        averages[key] = sum(lst) / len(lst)
-    return averages
 
 
 def run_round(template,
@@ -600,8 +272,6 @@ def run_round(template,
                                               pareto_allocations, people, cats_diverse, manual_pids, previous_meetings,
                                               m_data, pareto_probs, random, fields)
 
-    raw_meetings = previous_meetings.copy()
-
     for sublist in pareto_allocations:
 
         for i in range(len(sublist)):
@@ -612,20 +282,10 @@ def run_round(template,
 
                 previous_meetings[pair] += 1
 
-    for sublist in allocations:
-        for i in range(len(sublist)):
-            for j in range(i + 1, len(sublist)):
-                pair = (min(sublist[i], sublist[j]),
-                        max(sublist[i], sublist[j]))
-                # Increment count for the pair in the dictionary
-                raw_meetings[pair] += 1
-
     this_alloc = Allocation(
         ParticipantGroup(list)
         for list in pareto_allocations
     )
-
-    '''allocations, pareto_allocations, raw_meetings, '''
 
     return this_alloc
 
@@ -692,17 +352,6 @@ def pareto_swaps(shuffled_pids,
                 for index, demog in enumerate(pareto_profile):
 
                     if pid_info[demog] in pareto_profile[demog][profile[index]]:
-
-                        #print(fields[list(cats_diverse.keys())[list(cats_diverse.values()).index()]])
-                        #diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cats_labels)]]
-                        diversity_val = fields[demog]
-                        #if diversity_val == FieldMode.Diversify_3:
-                         #   pareto_score += 1
-                          #  rank3_score += 1
-                       # elif diversity_val == FieldMode.Diversify_2:
-                        #    pareto_score += 1
-                         #   rank2_score += 1
-                        #else:
                         pareto_score += 1
                         demog_pareto[demog-1] = True
 
@@ -941,9 +590,6 @@ def evaluate_demographics(temp_allocations,
     table_distances = {}
     table_length = len(table)
 
-    i = 0
-
-
     for demog in cats_diverse:
         counts = [0] * len(cats_diverse[demog])
         for person in table_data.values():
@@ -973,33 +619,15 @@ def evaluate_actions(ideal_dist,
 
     actions = {}
 
-    #print(list(mydict.keys())[list(mydict.values()).index(16)])
-    #mydict.keys()[mydict.values().index(16)]
-    diversity_val = fields[list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]]
-
     lister = list(cats_diverse.keys())[list(cats_diverse.values()).index(cat_labels)]
 
-    #top_prob = max(pareto_probs)
     threshold = -0.5 + pareto_probs[lister]
-    #k = fields[cats_diverse[cat_labels]]
     for index, label in enumerate(cat_labels):
         actions_for_label = []
         if table_dist[index] > ideal_dist[index]:
             for a, b in zip(table_discrepancies, cat_labels):
-                if diversity_val == FieldMode.Diversify and a < threshold:
-                       actions_for_label.append(b)
-                #elif diversity_val == FieldMode.Diversify_2 and a < -0.2:
-                 #      actions_for_label.append(b)
-                #elif diversity_val == FieldMode.Diversify_3 and a < -0.7:
-                 #      actions_for_label.append(b)
+                if a < threshold:
+                    actions_for_label.append(b)
         actions[label] = actions_for_label
-
-
-
-      #  for i in range (0,len(actions)):
-       #     if len(actions[i]) != 0:
-        #        for j in range (0,len(actions[i])):
-         #           actions[i][j] = math.ceil(actions[i][j] * 0.5)
-
 
     return actions
