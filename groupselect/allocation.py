@@ -81,7 +81,7 @@ class AllocationEnsemble(list[Allocation]):
             for allocation in self
             for group in allocation
             for p_id in group
-            if p_id
+            if p_id==p_id
         }
 
         meetings = {}
