@@ -35,13 +35,13 @@ def algorithm_dream(participants: np.ndarray[int],
     order_diverse = [k for k, v in fields.items() if v == FieldMode.Diversify]
 
 
-    if len(order_cluster ) >=1:
-        val_cluster = 'cluster'
-    else:
-        val_cluster = ''
-
     X = participants[:, order_cluster]
     X = np.unique(X)
+
+    if len(order_cluster ) >=1:
+        val_cluster = X[len(X)-1]
+    else:
+        val_cluster = ''
 
     Y = participants[:, order_diverse]
 
