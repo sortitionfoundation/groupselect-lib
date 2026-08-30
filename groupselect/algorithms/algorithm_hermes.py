@@ -27,6 +27,8 @@ def algorithm_hermes(participants: np.ndarray[int],
                     n_attempts: int = 3,
                     seed: None | int = None,
                     pareto_probs: dict[int, float] = None,
+                    swap_rounds: int = 1,
+                    cluster_tables: int = 2,
 ):
     pareto_probs = pareto_probs or {}
     for field_id in fields:
@@ -70,10 +72,6 @@ def algorithm_hermes(participants: np.ndarray[int],
     order_diverse_dict = dict(zip(order_diverse, lister))
 
 
-
-    swap_rounds = 1
-
-    cluster_tables = 2
 
     m_data = participants.shape[0]
 

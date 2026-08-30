@@ -17,7 +17,12 @@ def algorithm_dream(participants: np.ndarray[int],
                     manuals: dict[int, int],
                     progress_func: None | Callable = None,
                     n_attempts: int = 3,
-                    seed: None | int = None):
+                    seed: None | int = None,
+                    pareto_prob: float = 0.5,
+                    swap_rounds: int = 1,
+                    cluster_tables: int = 2):
+    if not (isinstance(pareto_prob, float) and 0.0 <= pareto_prob <= 0.5):
+        raise Exception(f"Pareto probability must be float in range [0.0, 0.5] but found: {pareto_prob}")
 
     nallocations = len(groups)
     progress_bar = progress_func
@@ -54,13 +59,7 @@ def algorithm_dream(participants: np.ndarray[int],
     order_diverse_dict = dict(zip(order_diverse, lister))
 
 
-    swap_rounds = 1
-
-    cluster_tables = 2
-
     m_data = participants.shape[0]
-
-    pareto_prob = 0.5
 
     seats = math.ceil(m_data /tables)
     previous_meetings = {}
