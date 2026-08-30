@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 from collections import Counter
 from itertools import combinations
 from math import comb
 
 import numpy as np
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 
 class ParticipantGroup(list[int]):
@@ -122,7 +128,7 @@ class AllocationEnsemble(list[Allocation]):
         return ret / len(self)
 
     def calc_diversity_score(self, participants_data: np.ndarray[int] | pd.DataFrame) -> float:
-        if isinstance(participants_data, pd.DataFrame):
+        if pd is not None and isinstance(participants_data, pd.DataFrame):
             participants_data = (
                 participants_data
                 .astype("category")
