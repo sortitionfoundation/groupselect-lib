@@ -1,3 +1,5 @@
+"""Data structures for allocations and metrics computed over them."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -13,28 +15,37 @@ except ImportError:
 
 
 class ParticipantGroup(list[int]):
+    """A single group of participant IDs."""
+
     pass
 
 
 class Allocation(list[ParticipantGroup]):
+    """A full allocation of participants into groups."""
+
     pass
 
 
 class AllocationEnsemble(list[Allocation]):
+    """A collection of allocations, e.g. produced over multiple rounds."""
+
     def get_pids(self):
+        """Return the set of all participant IDs across all allocations."""
         return {
             p_id
             for allocation in self
             for group in allocation
             for p_id in group
-            if p_id==p_id
+            if p_id == p_id
         }
 
     def calc_total_number_pairs(self):
+        """Return the number of possible participant pairs."""
         pids = self.get_pids()
         return comb(len(pids), 2)
 
     def calc_pair_counts(self) -> Counter:
+        """Count how often each pair of participants shares a group."""
         pair_counts = Counter()
         for allocation in self:
             for group in allocation:
@@ -43,6 +54,7 @@ class AllocationEnsemble(list[Allocation]):
         return pair_counts
 
     def calc_pair_occurrences(self) -> Counter:
+        """Count how many pairs meet 0, 1, 2, ... times across allocations."""
         # Calculate occurrences from pair counter.
         pair_counts = self.calc_pair_counts()
         occurrences = Counter(pair_counts.values())
@@ -55,10 +67,12 @@ class AllocationEnsemble(list[Allocation]):
         return occurrences
 
     def calc_meeting_rel_score(self) -> float:
+        """Return the share of participant pairs that meet at least once."""
         occurrences = self.calc_pair_occurrences()
         return 1 - occurrences[0] / sum(occurrences.values())
 
     def calc_meeting_norm_score(self) -> float:
+        """Return the meeting score normalised to its achievable range."""
         occurrences = self.calc_pair_occurrences()
         rel_score = sum(v for k, v in occurrences.items() if k)
 
@@ -71,23 +85,24 @@ class AllocationEnsemble(list[Allocation]):
 
         return (
             ((rel_score - min_score) / (max_score - min_score))
-            if max_score > min_score else
-            1.0
+            if max_score > min_score
+            else 1.0
         )
 
     def calc_n_meetings_alo(self) -> int:
+        """Return the total number of distinct meeting partners, summed."""
         return sum(
-            len(p_stats)
-            for p_id, p_stats in self.calc_meetings().items()
+            len(p_stats) for p_id, p_stats in self.calc_meetings().items()
         )
 
     def calc_meetings(self) -> dict[int, dict[int, int]]:
+        """Return how often each participant met every other one."""
         p_ids = {
             p_id
             for allocation in self
             for group in allocation
             for p_id in group
-            if p_id==p_id
+            if p_id == p_id
         }
 
         meetings = {}
@@ -127,11 +142,13 @@ class AllocationEnsemble(list[Allocation]):
 
         return ret / len(self)
 
-    def calc_diversity_score(self, participants_data: np.ndarray[int] | pd.DataFrame) -> float:
+    def calc_diversity_score(
+        self, participants_data: np.ndarray[int] | pd.DataFrame
+    ) -> float:
+        """Return the summed diversity score across all fields."""
         if pd is not None and isinstance(participants_data, pd.DataFrame):
             participants_data = (
-                participants_data
-                .astype("category")
+                participants_data.astype("category")
                 .apply(lambda col: col.cat.codes)
                 .to_numpy()
             )
@@ -144,5 +161,8 @@ class AllocationEnsemble(list[Allocation]):
 
 
 class AllocatorResult:
+    """Result of an allocator run, wrapping the resulting ensemble."""
+
     def __init__(self, ensemble: None | AllocationEnsemble = None):
+        """Store the allocation ensemble produced by the allocator."""
         self.ensemble = ensemble
