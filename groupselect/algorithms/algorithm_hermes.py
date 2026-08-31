@@ -106,12 +106,10 @@ def algorithm_hermes(
         for j in order_cluster + order_diverse:
             peopledata_vals_used[i][j] = int(participants[i][j])
 
-    if not order_diverse_dict:
-        raise Exception(
-            "Error: One diversification field required!",
-            "You have to set at least one field that is used to "
-            "diversify people across groups.",
-        )
+    # No diversification field is required: with `order_diverse_dict`
+    # empty, `cats_diverse` is empty throughout the swap machinery below
+    # (see `pareto_swaps` in this module), so HERMES then behaves as a
+    # meeting-optimisation-only allocator, same as DREAM in that case.
 
     if len(order_cluster_dict) > 1:
         raise Exception(
@@ -380,12 +378,19 @@ def pareto_swaps(
         # Use the highest configured probability among the diversity
         # fields the chosen candidate actually pareto-improves (falling
         # back to the overall maximum if it improves none, e.g. it was
-        # accepted purely for its meeting-uniqueness score).
+        # accepted purely for its meeting-uniqueness score). With no
+        # diversity fields configured at all, `pareto_probs` is empty and
+        # no candidate ever pareto-improves a field, so fall back to 0.0
+        # instead of `max()`-ing an empty sequence -- `select_key` then
+        # always takes its meeting-uniqueness branch, matching DREAM's
+        # own degenerate no-diversify-field behaviour.
         def pareto_prob_for(k):
             relevant = [
                 pareto_probs[field_id] for field_id in demog_scores.get(k, ())
             ]
-            return max(relevant) if relevant else max(pareto_probs.values())
+            if relevant:
+                return max(relevant)
+            return max(pareto_probs.values()) if pareto_probs else 0.0
 
         final_swap = select_key(
             final_candidates, final_meetings, pareto_prob_for, random
