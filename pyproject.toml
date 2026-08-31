@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "groupselect"
 version = "0.1.0"
@@ -12,7 +16,21 @@ dependencies = [
     "numpy>=2.3.4",
 ]
 
+[project.optional-dependencies]
+pandas = ["pandas>=2.0"]
+
 [dependency-groups]
 dev = [
-    "pytest>=9.0.2",
+    "pytest>=9.0.0",
+    "ruff>=0.16.5",
 ]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+select = ["D"]
+extend-select = ["E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
