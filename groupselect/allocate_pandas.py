@@ -3,6 +3,8 @@
 import warnings
 from typing import Callable, Iterable, Hashable
 
+import numpy as np
+
 from groupselect import FieldMode, Algorithm, allocate_numpy, AllocatorResult
 
 
@@ -57,7 +59,16 @@ def allocate_pandas(
     participants_codes = participants[list(fields.keys())].apply(
         lambda col: col.cat.codes
     )
-    participants_numpy = participants_codes.to_numpy()
+    if fields:
+        participants_numpy = participants_codes.to_numpy()
+    else:
+        # `.apply()` on a zero-column selection returns an empty
+        # DataFrame with no columns to infer a dtype from, so pandas
+        # defaults it to float64 -- `to_numpy()` would then fail
+        # `allocate_numpy`'s integer-dtype check below. Build the
+        # (n_participants, 0) array directly instead, with an explicit
+        # integer dtype.
+        participants_numpy = np.empty((len(participants_codes), 0), dtype=int)
     fields_numpy = {
         participants_codes.columns.tolist().index(k): v
         for k, v in fields.items()

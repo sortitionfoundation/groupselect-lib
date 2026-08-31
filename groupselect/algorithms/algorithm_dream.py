@@ -92,12 +92,11 @@ def algorithm_dream(
         for j in order_cluster + order_diverse:
             peopledata_vals_used[i][j] = int(participants[i][j])
 
-    if not order_diverse_dict:
-        raise Exception(
-            "Error: One diversification field required!",
-            "You have to set at least one field that is used to "
-            "diversify people across groups.",
-        )
+    # No diversification field is required: with `order_diverse_dict`
+    # empty, `cats_diverse` is empty throughout the swap machinery below,
+    # so every table is reported as perfectly balanced and swaps are
+    # chosen on unique-meeting count alone -- DREAM then behaves as a
+    # meeting-optimisation-only allocator.
 
     if len(order_cluster_dict) > 1:
         raise Exception(
