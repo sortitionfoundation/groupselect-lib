@@ -68,9 +68,7 @@ def allocate_pandas(
         # `allocate_numpy`'s integer-dtype check below. Build the
         # (n_participants, 0) array directly instead, with an explicit
         # integer dtype.
-        participants_numpy = np.empty(
-            (len(participants_codes), 0), dtype=int
-        )
+        participants_numpy = np.empty((len(participants_codes), 0), dtype=int)
     fields_numpy = {
         participants_codes.columns.tolist().index(k): v
         for k, v in fields.items()
