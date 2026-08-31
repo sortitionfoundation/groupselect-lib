@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "groupselect"
-version = "0.2.0"
+version = "0.3.0"
 description = "GroupSelect library."
 authors = [
     { name = "Philipp C. Verpoort", email = "pcv@sortitionfoundation.org" }
