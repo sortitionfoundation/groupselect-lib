@@ -54,7 +54,7 @@ def _mean_over_fields(
     participants_data: np.ndarray[int] | pd.DataFrame,
     single_field_score: Callable[[np.ndarray], float],
 ) -> float:
-    """Return the mean of `single_field_score` over every field's population column."""
+    """Return the mean of `single_field_score` over each population field."""
     participants_data = _encode_participants_data(participants_data)
     fields = list(participants_data.T)
     if not fields:
@@ -98,8 +98,10 @@ def _chance_deviation_single_field(
     return float(np.abs(shares - share_full).sum(axis=1).mean())
 
 
-def _normalize_diversity_score(score: float, best: float, worst: float) -> float:
-    """Rescale a raw diversity deviation against a best case and a chance baseline.
+def _normalize_diversity_score(
+    score: float, best: float, worst: float
+) -> float:
+    """Rescale a raw deviation against a best case and a chance baseline.
 
     Mirrors `AllocationEnsemble.calc_meeting_norm_score`'s min/max rescaling,
     flipped since a *lower* raw deviation is better here: `best` (the
@@ -124,7 +126,7 @@ class ParticipantGroup(list[int]):
         n_values: int,
         share_full: np.ndarray,
     ) -> float:
-        """Return this group's L1 distance from the population shares, for one field.
+        """Return this group's L1 distance from population shares, per field.
 
         `inverse`, `n_values`, and `share_full` are the population-wide
         encoding of a single field, as produced by `_prepare_field_stats`.
@@ -169,7 +171,7 @@ class ParticipantGroup(list[int]):
         n_values: int,
         share_full: np.ndarray,
     ) -> float:
-        """Return a random group's expected deviation, for one field (chance baseline).
+        """Return a random group's expected deviation, per field (chance).
 
         The "0%" reference used by `calc_diversity_norm_score`: how far off
         a *uniformly random* group of this size would typically be from the
@@ -223,7 +225,7 @@ class ParticipantGroup(list[int]):
     def calc_diversity_norm_score(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return this group's diversity score normalised to its estimated range.
+        """Return this group's diversity score, normalised to its range.
 
         1.0 = at (or beyond) the best a group this size could do; 0.0 = no
         better than a uniformly random group of the same size (chance
@@ -253,7 +255,9 @@ class Allocation(list[ParticipantGroup]):
         arguments. This is DREAM's mean_j(∆_{j,d}) for a fixed field d.
         """
         return sum(
-            group.calc_diversity_score_single_field(inverse, n_values, share_full)
+            group.calc_diversity_score_single_field(
+                inverse, n_values, share_full
+            )
             for group in self
         ) / len(self)
 
@@ -268,7 +272,9 @@ class Allocation(list[ParticipantGroup]):
         See `ParticipantGroup.calc_diversity_score_best_single_field`.
         """
         return sum(
-            group.calc_diversity_score_best_single_field(inverse, n_values, share_full)
+            group.calc_diversity_score_best_single_field(
+                inverse, n_values, share_full
+            )
             for group in self
         ) / len(self)
 
@@ -278,12 +284,14 @@ class Allocation(list[ParticipantGroup]):
         n_values: int,
         share_full: np.ndarray,
     ) -> float:
-        """Return the mean chance-baseline deviation across this allocation's groups.
+        """Return this allocation's mean chance-baseline deviation, per group.
 
         See `ParticipantGroup.calc_diversity_score_worst_single_field`.
         """
         return sum(
-            group.calc_diversity_score_worst_single_field(inverse, n_values, share_full)
+            group.calc_diversity_score_worst_single_field(
+                inverse, n_values, share_full
+            )
             for group in self
         ) / len(self)
 
@@ -305,7 +313,7 @@ class Allocation(list[ParticipantGroup]):
     def calc_diversity_score_best(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return the best this allocation's groups could do, meaned across fields."""
+        """Return this allocation's best-case deviation, meaned over fields."""
         return _mean_over_fields(
             participants_data,
             lambda col: self.calc_diversity_score_best_single_field(
@@ -316,7 +324,7 @@ class Allocation(list[ParticipantGroup]):
     def calc_diversity_score_worst(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return this allocation's chance-baseline deviation, meaned across fields."""
+        """Return this allocation's chance deviation, meaned over fields."""
         return _mean_over_fields(
             participants_data,
             lambda col: self.calc_diversity_score_worst_single_field(
@@ -327,7 +335,7 @@ class Allocation(list[ParticipantGroup]):
     def calc_diversity_norm_score(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return this allocation's diversity score normalised to its estimated range.
+        """Return this allocation's diversity score, normalised to its range.
 
         1.0 = at (or beyond) the best this allocation's groups could do;
         0.0 = no better than a uniformly random allocation of the same
@@ -436,7 +444,9 @@ class AllocationEnsemble(list[Allocation]):
 
         return meetings
 
-    def calc_diversity_score_single_field(self, values_field: np.ndarray) -> float:
+    def calc_diversity_score_single_field(
+        self, values_field: np.ndarray
+    ) -> float:
         """Return the mean per-allocation diversity deviation, for one field.
 
         Unlike `Allocation`/`ParticipantGroup`'s methods of the same name,
@@ -458,7 +468,9 @@ class AllocationEnsemble(list[Allocation]):
             for allocation in self
         ) / len(self)
 
-    def calc_diversity_score_best_single_field(self, values_field: np.ndarray) -> float:
+    def calc_diversity_score_best_single_field(
+        self, values_field: np.ndarray
+    ) -> float:
         """Return the mean per-allocation best-case deviation, for one field.
 
         See `Allocation.calc_diversity_score_best_single_field`.
@@ -472,8 +484,10 @@ class AllocationEnsemble(list[Allocation]):
             for allocation in self
         ) / len(self)
 
-    def calc_diversity_score_worst_single_field(self, values_field: np.ndarray) -> float:
-        """Return the mean per-allocation chance-baseline deviation, for one field.
+    def calc_diversity_score_worst_single_field(
+        self, values_field: np.ndarray
+    ) -> float:
+        """Return the mean per-allocation chance-baseline deviation, per field.
 
         See `Allocation.calc_diversity_score_worst_single_field`.
         """
@@ -505,7 +519,7 @@ class AllocationEnsemble(list[Allocation]):
     def calc_diversity_score_best(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return the best this ensemble's allocations could do, meaned across fields.
+        """Return this ensemble's best-case deviation, meaned over fields.
 
         See `ParticipantGroup.calc_diversity_score_best_single_field` for
         how the per-group best case is estimated; this means it over
@@ -518,7 +532,7 @@ class AllocationEnsemble(list[Allocation]):
     def calc_diversity_score_worst(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return this ensemble's chance-baseline deviation, meaned across fields.
+        """Return this ensemble's chance deviation, meaned over fields.
 
         See `ParticipantGroup.calc_diversity_score_worst_single_field` for
         how the per-group chance baseline is estimated; this means it over
@@ -531,7 +545,7 @@ class AllocationEnsemble(list[Allocation]):
     def calc_diversity_norm_score(
         self, participants_data: np.ndarray[int] | pd.DataFrame
     ) -> float:
-        """Return the diversity score normalised to its estimated achievable range.
+        """Return the diversity score, normalised to its achievable range.
 
         Mirrors `calc_meeting_norm_score`, but for diversity: 1.0 = at (or
         beyond) the best this ensemble's allocations could do; 0.0 = no
