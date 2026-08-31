@@ -9,7 +9,7 @@ from groupselect.examples import example_data_pd
 
 def test_philipps_example_data():
     """Allocate Philipp's example dataset and print the result."""
-    df = example_data_pd["philipps_example_data"]
+    df = example_data_pd["default"]
     for fields in (
         {
             "age": "diversify",
