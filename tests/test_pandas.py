@@ -61,3 +61,34 @@ def test_legacy_requires_diversify_field():
             n_part_per_group=3 * [6],
             algorithm="Legacy",
         )
+
+
+@pytest.mark.parametrize("algorithm", ["DREAM", "HERMES"])
+def test_dream_hermes_with_no_fields_at_all(algorithm):
+    """DREAM/HERMES must allocate with an entirely empty `fields` dict.
+
+    `participants[[]].apply(...)` returns a zero-column DataFrame that
+    pandas defaults to dtype float64 (there are no columns to infer a
+    dtype from), which used to fail `allocate_numpy`'s integer-dtype
+    check -- see `allocate_pandas()`'s explicit `fields`-empty branch.
+    """
+    df = example_data_pd["default"]
+    settings = {"pareto_prob": 0.4} if algorithm == "DREAM" else {}
+    res = df.groupselect.allocate(
+        fields={},
+        n_part_per_group=6,
+        algorithm=algorithm,
+        settings=settings,
+    )
+    assert len(res) == len(df)
+
+
+def test_legacy_requires_diversify_field_with_no_fields_at_all():
+    """LEGACY must still reject an entirely empty `fields` dict too."""
+    df = example_data_pd["default"]
+    with pytest.raises(Exception, match="diversification field required"):
+        df.groupselect.allocate(
+            fields={},
+            n_part_per_group=6,
+            algorithm="Legacy",
+        )
