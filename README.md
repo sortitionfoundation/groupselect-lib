@@ -10,7 +10,7 @@ This software can be used to divide participants of a deliberative process into 
 The library is recommended when developing new algorithms. End users, who simply seek to execute the software, are referred to the [GroupSelect App](https://github.com/sortitionfoundation/groupselect-app/), which is a stand-alone desktop application for Windows, Mac, and Linux).
 
 ## Authors
-The legacy algorithm was developed by P.C. Verpoort in 2020. The heuristic algorithm was developed by J. Barrett and K. Gal in 2024. Some generic wrapping functions were developed by P.C. Verpoort in 2024.
+The legacy algorithm was developed by P.C. Verpoort in 2020. The DREAM algorithm was developed by J. Barrett and K. Gal in 2024. Some generic wrapping functions were developed by P.C. Verpoort in 2024. The HERMES algorithm was developed by M. Cowie in 2026.
 
 ## License
 The GroupSelect Library is free software and is made available under an [MIT licence](https://opensource.org/license/mit).
