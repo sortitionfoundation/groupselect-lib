@@ -25,7 +25,7 @@ def algorithm_hermes(
     fields: dict[int, FieldMode],
     groups: list[(int, int)],
     manuals: dict[int, int],
-    progress_func: None | Callable = None,
+    progress_func: None | Callable[[float], None] = None,
     seed: None | int = None,
     pareto_probs: dict[int, float] = None,
     swap_rounds: int = 1,

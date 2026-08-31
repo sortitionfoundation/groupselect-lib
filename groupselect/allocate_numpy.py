@@ -18,10 +18,16 @@ def allocate_numpy(
     n_part_per_group: int | Iterable[int],
     manuals: None | dict[int, int] = None,
     algorithm: Algorithm | str = Algorithm.Legacy,
-    progress_func: None | Callable = None,
+    progress_func: None | Callable[[float], None] = None,
     settings: None | dict = None,
 ) -> AllocatorResult:
-    """Allocate participants into groups using the chosen algorithm."""
+    """Allocate participants into groups using the chosen algorithm.
+
+    `progress_func`, if given, is called repeatedly by the chosen algorithm
+    with a single float in [0.0, 1.0] indicating the fraction of work done
+    so far -- this is comparable across all algorithms, regardless of how
+    each one internally breaks its work into steps.
+    """
     # Check arguments: participants.
     if not np.issubdtype(participants.dtype, np.integer):
         raise Exception("Argument participants must only contain integers.")

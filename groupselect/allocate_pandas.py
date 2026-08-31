@@ -22,11 +22,17 @@ def allocate_pandas(
     n_part_per_group: int | Iterable[int],
     manuals: None | dict[int, int] = None,
     algorithm: Algorithm | str = Algorithm.Legacy,
-    progress_func: None | Callable = None,
+    progress_func: None | Callable[[float], None] = None,
     settings: None | dict = None,
     return_full: bool = False,
 ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame, AllocatorResult]:
-    """Allocate participants of a dataframe into groups."""
+    """Allocate participants of a dataframe into groups.
+
+    `progress_func`, if given, is called repeatedly by the chosen algorithm
+    with a single float in [0.0, 1.0] indicating the fraction of work done
+    so far -- this is comparable across all algorithms, regardless of how
+    each one internally breaks its work into steps.
+    """
     # Check that the dataframe index is unique.
     if not participants.index.is_unique:
         raise Exception("Index of dataframe must be unique.")
@@ -129,7 +135,7 @@ class GroupSelectAccessor:
         n_part_per_group: int | Iterable[int],
         manuals: None | dict[int, int] = None,
         algorithm: Algorithm | str = Algorithm.Legacy,
-        progress_func: None | Callable = None,
+        progress_func: None | Callable[[float], None] = None,
         settings: None | dict = None,
         return_full: bool = False,
     ) -> pd.DataFrame:

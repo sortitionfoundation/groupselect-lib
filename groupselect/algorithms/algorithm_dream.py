@@ -22,7 +22,7 @@ def algorithm_dream(
     fields: dict[int, FieldMode],
     groups: list[(int, int)],
     manuals: dict[int, int],
-    progress_func: None | Callable = None,
+    progress_func: None | Callable[[float], None] = None,
     seed: None | int = None,
     pareto_prob: float = 0.5,
     swap_rounds: int = 1,
@@ -736,7 +736,7 @@ def allocate(
     cluster_tables,
     pareto_prob,
     n_swap_loops,
-    progress_bar,
+    progress_bar: None | Callable[[float], None],
     previous_meetings,
     no_cluster_agents,
     val_cluster,
@@ -759,7 +759,7 @@ def allocate(
 
     for round_no in range(n_rounds):
         if progress_bar:
-            progress_bar(round_no + 1)
+            progress_bar((round_no + 1) / n_rounds)
 
         if not (isinstance(tables, int)):
             no_tables = tables[round_no]

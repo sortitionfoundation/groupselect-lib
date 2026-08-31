@@ -19,7 +19,7 @@ def algorithm_legacy(
     fields: dict[int, FieldMode],
     groups: list[(int, int)],
     manuals: dict[int, int],
-    progress_func: None | Callable = None,
+    progress_func: None | Callable[[float], None] = None,
     n_attempts: int = 100,
     seed: None | int = None,
 ) -> AllocatorResult:
@@ -67,7 +67,7 @@ def algorithm_legacy(
     ]
     for n, ensemble in enumerate(allocation_attempts):
         if progress_func is not None:
-            progress_func(n)
+            progress_func(n / n_attempts)
         for n_gr, n_ppgr in groups:
             # Shuffle participant IDs.
             shuffle = list(range(len(participants)))
